@@ -34,9 +34,13 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
             cantidad: detalle.cantidad
           })),
         });
+  
+        // Limpiar las validaciones al seleccionar una ficha existente
+        setErrors({});
       }
     }
   }, [fichaSeleccionada, fichas]);
+  
 
   const Toast = Swal.mixin({
     toast: true,

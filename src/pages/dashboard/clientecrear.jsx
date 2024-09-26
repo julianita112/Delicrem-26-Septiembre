@@ -81,22 +81,30 @@ const ClienteCrear = ({ selectedCliente, setSelectedCliente, fetchClientes, hand
   };
 
   const handleSave = async () => {
-    if (!validateFields(selectedCliente)) {
+    const isValid = await validateFields(selectedCliente); 
+    if (!isValid) {
+      Toast.fire({
+        icon: "error",
+        title: "Por favor, completa todos los campos correctamente.",
+      });
       return;
     }
+
+
+
 
     try {
       if (selectedCliente.id_cliente) {
         await axios.put(`http://localhost:3000/api/clientes/${selectedCliente.id_cliente}`, selectedCliente);
         Toast.fire({
           icon: 'success',
-          title: '¡Actualizado! El cliente ha sido actualizado correctamente.'
+          title: 'El cliente ha sido actualizado correctamente.'
         });
       } else {
         await axios.post("http://localhost:3000/api/clientes", selectedCliente);
         Toast.fire({
           icon: 'success',
-          title: '¡Creado! El cliente ha sido creado correctamente.'
+          title: '¡Creación exitosa! El cliente ha sido creado correctamente.'
         });
       }
       fetchClientes();
@@ -149,7 +157,7 @@ const ClienteCrear = ({ selectedCliente, setSelectedCliente, fetchClientes, hand
             value={selectedCliente.numero_documento}
             onChange={handleChange}
             required
-            error={formErrors.numero_documento}
+           
           />
           {formErrors.numero_documento && (
             <Typography className="text-red-500 text-sm mt-2">
@@ -165,7 +173,7 @@ const ClienteCrear = ({ selectedCliente, setSelectedCliente, fetchClientes, hand
             value={selectedCliente.nombre}
             onChange={handleChange}
             required
-            error={formErrors.nombre}
+            
           />
           {formErrors.nombre && (
             <Typography className="text-red-500 text-sm mt-2">
@@ -181,7 +189,7 @@ const ClienteCrear = ({ selectedCliente, setSelectedCliente, fetchClientes, hand
             value={selectedCliente.contacto}
             onChange={handleChange}
             required
-            error={formErrors.contacto}
+           
           />
           {formErrors.contacto && (
             <Typography className="text-red-500 text-sm mt-2">
@@ -197,7 +205,7 @@ const ClienteCrear = ({ selectedCliente, setSelectedCliente, fetchClientes, hand
             value={selectedCliente.email}
             onChange={handleChange}
             required
-            error={formErrors.email}
+         
           />
           {formErrors.email && (
             <Typography className="text-red-500 text-sm mt-2">

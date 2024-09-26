@@ -128,8 +128,8 @@ export function Roles() {
         await axios.delete(`http://localhost:3000/api/roles/${role.id_rol}`);
         fetchRoles(); 
         Toast.fire({
-          icon: "success",
-          title: "Rol eliminado exitosamente."
+          icon: "Rol Eliminado",
+          title: "El Rol ha sido eliminado exitosamente."
         });
       } catch (error) {
         console.error("Error deleting role:", error);
@@ -150,6 +150,7 @@ export function Roles() {
       }
     }
   };
+
   const validateForm = () => {
     let valid = true;
     const newErrors = { nombre: "", permisos: "" };
@@ -167,10 +168,15 @@ export function Roles() {
       roles.some(
         (role) =>
           role.nombre.toLowerCase() === selectedRole.nombre.trim().toLowerCase() &&
-          role.id_rol !== selectedRole.id_rol // Ignorar el rol actual si está en modo edición
+          role.id_rol !== selectedRole.id_rol
       )
     ) {
       newErrors.nombre = "Ya existe un rol con este nombre.";
+      valid = false;
+    }
+  
+    if (selectedRole.permisosRol.length === 0) {
+      newErrors.permisos = "Debe seleccionar al menos un permiso.";
       valid = false;
     }
   
@@ -178,10 +184,19 @@ export function Roles() {
     return valid;
   };
   
+  
   const handleSave = async () => {
+    const isValid = validateForm();
+    if (!isValid) {
+      Toast.fire({
+        icon: "error",
+        title: "Por favor, completa todos los campos correctamente.",
+      });
+      return; // Salir si la validación falla
+    }
+
+
     if (!validateForm()) return;
-
-
     try {
       if (editMode) {
         await axios.put(`http://localhost:3000/api/roles/${selectedRole.id_rol}`, {
@@ -191,7 +206,7 @@ export function Roles() {
         });
         Toast.fire({
           icon: "success",
-          title: "Rol editado exitosamente."
+          title: "El Rol ha sido actualizado correctamente."
         });
       } else {
         await axios.post("http://localhost:3000/api/roles", {
@@ -201,7 +216,7 @@ export function Roles() {
         });
         Toast.fire({
           icon: "success",
-          title: "Rol creado exitosamente."
+          title: "¡Creación exitosa! El Rol creado exitosamente."
         });
       }
       fetchRoles(); 
@@ -242,14 +257,26 @@ export function Roles() {
     }
   };
   
-  const handlePermissionChange = (id_permiso) => {
-    const { permisosRol } = selectedRole;
-    if (permisosRol.includes(id_permiso)) {
-      setSelectedRole({ ...selectedRole, permisosRol: permisosRol.filter(p => p !== id_permiso) });
+  const handlePermissionChange = (permisoId) => {
+    let updatedPermissions;
+  
+    if (selectedRole.permisosRol.includes(permisoId)) {
+      updatedPermissions = selectedRole.permisosRol.filter(id => id !== permisoId);
     } else {
-      setSelectedRole({ ...selectedRole, permisosRol: [...permisosRol, id_permiso] });
+      updatedPermissions = [...selectedRole.permisosRol, permisoId];
+    }
+  
+    setSelectedRole({
+      ...selectedRole,
+      permisosRol: updatedPermissions,
+    });
+  
+    // Validar en tiempo real y eliminar el error si hay al menos un permiso seleccionado
+    if (updatedPermissions.length > 0) {
+      setErrors((prevErrors) => ({ ...prevErrors, permisos: '' }));
     }
   };
+  
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
@@ -426,7 +453,7 @@ export function Roles() {
             name="nombre"
             value={selectedRole.nombre}
             onChange={handleChange}
-            error={errors.nombre}
+          
             className={`mb-2 ${errors.nombre ? 'border-red-800' : ''}`}
             required
           />
@@ -435,6 +462,7 @@ export function Roles() {
             Permisos
           </Typography>
           <div className="grid grid-cols-4 gap-2 max-h-[30vh] overflow-y-auto">
+            
             {permisos.map((permiso) => (
               <Checkbox
                 key={permiso.id_permiso}
@@ -445,6 +473,7 @@ export function Roles() {
               />
             ))}
           </div>
+          
           {errors.permisos && <Typography color="red" className="text-sm">{errors.permisos}</Typography>}
         </DialogBody>
         <DialogFooter>
@@ -463,7 +492,7 @@ export function Roles() {
   className="max-w-xs w-11/12 bg-white rounded-lg shadow-lg p-4"
   size="xs"
 >
-  <DialogHeader className="text-xl font-semibold text-center text-gray-700 border-b-2 pb-2">
+  <DialogHeader className="text-xl font-semibold text-center  border-b-2 pb-2">
     Detalles del Rol
   </DialogHeader>
   <DialogBody divider className="mt-2 space-y-4">

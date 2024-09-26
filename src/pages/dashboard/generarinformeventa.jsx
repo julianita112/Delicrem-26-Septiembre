@@ -3,7 +3,7 @@ import { Bar, Doughnut } from "react-chartjs-2";
 import { Button, Input, Card, CardBody, Typography } from "@material-tailwind/react";
 import axios from "../../utils/axiosConfig";
 import Swal from "sweetalert2";
-import * as XLSX from "xlsx"; // Importar la librería XLSX
+import * as XLSX from "xlsx";
 import { Chart, registerables } from "chart.js";
 
 Chart.register(...registerables);
@@ -54,11 +54,45 @@ export function GenerarInformeVenta({ onCancel }) {
   };
 
   const handleGenerarInforme = () => {
+    const hoy = new Date();
+    const fechaHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+    // Validaciones de fechas
     if (!fechaInicio || !fechaFin) {
       Swal.fire({
         icon: "error",
         title: "Fechas inválidas",
         text: "Por favor, selecciona las fechas de inicio y fin.",
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+      });
+      return;
+    }
+
+    if (new Date(fechaInicio) > new Date(fechaFin)) {
+      Swal.fire({
+        icon: "error",
+        title: "Fechas inválidas",
+        text: "La fecha de inicio no puede ser mayor que la fecha de fin.",
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+      });
+      return;
+    }
+
+    if (new Date(fechaInicio) > fechaHoy || new Date(fechaFin) > fechaHoy) {
+      Swal.fire({
+        icon: "error",
+        title: "Fechas inválidas",
+        text: "Las fechas no pueden ser futuras.",
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
       });
       return;
     }
@@ -73,10 +107,13 @@ export function GenerarInformeVenta({ onCancel }) {
         icon: "error",
         title: "No se encontraron ventas",
         text: "No hay ventas dentro del rango de fechas seleccionado.",
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
       });
       return;
     }
-
     const productosVendidos = {};
     const clientesCompraron = {};
 
@@ -117,12 +154,29 @@ export function GenerarInformeVenta({ onCancel }) {
     setNumeroVentas(ventasFiltradas.length);
     setInformeGenerado(true);
 
-    Swal.fire({
-      icon: "success",
-      title: "Informe generado con éxito",
+    const Toast = Swal.mixin({
+      toast: true,
+      position: 'top-end', // Puedes cambiar la posición según lo desees
       showConfirmButton: false,
       timer: 2000,
+      timerProgressBar: true,
+     
+      
     });
+
+
+
+    
+    Swal.fire({
+      position: 'top-end', // Cambia la posición según lo necesites
+      icon: "success",
+      title: "Informe de Ventas generado con éxito",
+      showConfirmButton: false,
+      timer: 2000,
+      toast: true, // Esto convierte la alerta en un toast
+      timerProgressBar: true, // Esto muestra una barra de progreso
+    });
+    
   };
 
   const handleDescargarInforme = () => {

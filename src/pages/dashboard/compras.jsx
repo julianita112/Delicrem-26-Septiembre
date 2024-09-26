@@ -35,7 +35,7 @@ export function Compras() {
   });
   const [showDetails, setShowDetails] = useState(false); 
   const [currentPage, setCurrentPage] = useState(1);
-  const [comprasPerPage] = useState(10);
+  const [comprasPerPage] = useState(6);
   const [search, setSearch] = useState("");
   const [cancelOpen, setCancelOpen] = useState(false); 
   const [motivoAnulacion, setMotivoAnulacion] = useState(''); 
@@ -69,6 +69,10 @@ export function Compras() {
     } catch (error) {
       console.error("Error fetching compras:", error);
     }
+  };
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
   };
 
   const fetchProveedores = async () => {
@@ -207,10 +211,17 @@ export function Compras() {
         <CardBody className="p-4">
           {!mostrarInforme && !showForm ? (
             <>
-              <div className="flex items-center gap-4 -mt-1">
-                <Button onClick={handleCreate} className="btnagregar py-2 mt-6" size="sm" startIcon={<PlusIcon />}>
-                  Crear Compra
-                </Button>
+              <div className="flex items-center gap-2.5 -mt-1">
+              <Button
+  onClick={handleCreate}
+  className="btnagregar py-2 mt-6"
+  style={{ width: '20%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+  size="sm"
+  startIcon={<PlusIcon />}
+>
+  Crear Compra
+</Button>
+
                 <Button 
                   onClick={handleGenerarReporte}  
                   className="bg-black text-white hover:bg-pink-800 transition rounded px-4 py-2"
@@ -224,16 +235,24 @@ export function Compras() {
                   size="sm"
                 >
                   Informe
+             
                 </Button>
-                <Input
-                  type="text"
-                  placeholder="Buscar por Proveedor..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="ml-[14rem] border border-gray-300 rounded-md focus:border-blue-500 appearance-none shadow-none py-2 px-4 text-sm"
-                  style={{ width: '265px' }} 
-                />
-              </div>              
+
+
+                <input
+            type="text"
+            placeholder="Buscar por nombre de Proveedor..."
+            value={search}
+            onChange={handleSearchChange}
+            className="ml-40 border border-gray-300 rounded-md focus:border-blue-500 appearance-none shadow-none py-2 px-4 text-sm"
+            style={{ width: '265px', marginLeft: '200px' }} // Ajusta el ancho del campo de búsqueda
+          />
+
+
+
+
+              </div>  
+                          
               <div className="mb-1">
                 <Typography variant="h5" color="blue-gray" className="mb-4">
                   Lista de Compras
@@ -242,24 +261,24 @@ export function Compras() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="py-2 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número de Recibo</th>
-                        <th className="py-2 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proveedor</th>
-                        <th className="py-2 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Compra</th>
-                        <th className="py-2 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Registro</th>
-                        <th className="py-2 px-8 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                        <th className="py-2 px-8 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                        <th className="py-2 px-8 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número de Recibo</th>
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proveedor</th>
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Compra</th>
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Registro</th>
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
                       {currentCompras.map((compra) => (
                         <tr key={compra.id_compra} className="border-b">
-                          <td className="py-2 px-4">{compra.numero_recibo || "N/A"}</td>
-                          <td className="py-2 px-4">{compra.proveedorCompra?.nombre || "Desconocido"}</td>
-                          <td className="py-2 px-4">{compra.fecha_compra?.split("T")[0]}</td>
-                          <td className="py-2 px-4">{compra.fecha_registro?.split("T")[0]}</td>
-                          <td className="py-2 px-4">{compra.id_estado === 5 ? 'Anulado' : 'Completado'}</td>
-                          <td className="py-2 px-4">${parseFloat(compra.total).toFixed(2)}</td>
+                          <td className="py-2 px-4 whitespace-nowrap text-sm font-medium text-gray-900">{compra.numero_recibo || "N/A"}</td>
+                          <td className="py-2 px-4 whitespace-nowrap text-sm">{compra.proveedorCompra?.nombre || "Desconocido"}</td>
+                          <td className="py-2 px-4 whitespace-nowrap text-sm">{compra.fecha_compra?.split("T")[0]}</td>
+                          <td className="py-2 px-4 whitespace-nowrap text-sm">{compra.fecha_registro?.split("T")[0]}</td>
+                          <td className="py-2 px-4 whitespace-nowrap text-sm">{compra.id_estado === 5 ? 'Anulado' : 'Completado'}</td>
+                          <td className="py-2 px-4 whitespace-nowrap text-sm">${parseFloat(compra.total).toFixed(2)}</td>
                           
                           <td className="py-3 px-6 flex gap-2">
                             <IconButton className="btnvisualizar" size="sm" onClick={() => handleViewDetails(compra)}>
@@ -389,42 +408,50 @@ export function Compras() {
         </DialogFooter>
       </Dialog>
 
-      {/* Modal para capturar motivo de anulación */}
-      {cancelOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-70">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-            <Typography variant="h6" className="font-semibold mb-4">
-              Motivo de Anulación
-            </Typography>
-            <textarea
-              placeholder="Escribe el motivo de anulación aquí..."
-              value={motivoAnulacion}
-              onChange={(e) => setMotivoAnulacion(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg mb-4 resize-none"
-              rows={4}
-              required
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="text"
-                className="btncancelarm"
-                size="sm"
-                onClick={() => setCancelOpen(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="gradient"
-                className="btnagregarm"
-                size="sm"
-                onClick={handleCancelCompra}
-              >
-                Anular Compra
-              </Button>
-            </div>
-          </div>
-        </div>
+     {/* Modal para capturar motivo de anulación */}
+{cancelOpen && (
+  <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-70">
+    <div className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full transition-transform transform scale-100 hover:scale-105">
+      <Typography variant="h5" className="font-semibold mb-4 text-righ">
+        Motivo de Anulación de la Compra
+      </Typography>
+      <textarea
+        placeholder="Escribe el motivo de anulación aquí..."
+        value={motivoAnulacion}
+        onChange={(e) => setMotivoAnulacion(e.target.value)}
+        className={`w-full p-4 border ${motivoAnulacion.length < 5 || motivoAnulacion.length > 30 ? 'border-red-500' : 'border-gray-300'} rounded-lg mb-4 resize-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none transition duration-200`}
+        rows={4}
+        required
+      />
+      
+      {motivoAnulacion.length < 5 && (
+        <p className="text-red-500 text-sm">El motivo debe tener al menos 5 letras.</p>
       )}
+      {motivoAnulacion.length > 30 && (
+        <p className="text-red-500 text-sm">El motivo no puede tener más de 30 letras.</p>
+      )}
+      <div className="flex justify-end gap-3 mt-4">
+        <Button
+          variant="text"
+          className="btncancelarm text-white"
+          size="sm"
+          onClick={() => setCancelOpen(false)}
+        >
+          Cancelar
+        </Button>
+        <Button
+          variant="gradient"
+          className="btnagregarm bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition duration-200"
+          size="sm"
+          disabled={motivoAnulacion.length < 5 || motivoAnulacion.length > 30} // Deshabilitar el botón si no cumple la validación
+          onClick={handleCancelCompra}
+        >
+          Anular Compra
+        </Button>
+      </div>
+    </div>
+  </div>
+)}
 
       {mostrarReporte && <ReporteCompras />}
     </>

@@ -239,14 +239,15 @@ export function FichasTecnicas() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th scope="col" className="px-20 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-10 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Descripción
                         </th>
                         <th scope="col" className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Producto
                         </th>
                         <th scope="col" className="px-12 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Insumos
+                          Descripción
+                         Insumos
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Estado
@@ -259,7 +260,7 @@ export function FichasTecnicas() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {currentFichas.map((ficha) => (
                         <tr key={ficha.id_ficha}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          <td className="px-7 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             <div className="text-sm text-gray-900">{ficha.descripcion}</div>
                           </td>
                           <td className="px-0 py-4 whitespace-nowrap text-sm ">

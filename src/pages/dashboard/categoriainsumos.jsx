@@ -16,6 +16,18 @@ import axios from "../../utils/axiosConfig";
 import { Textarea } from "@material-tailwind/react"; 
 import Swal from 'sweetalert2';
 
+const Toast = Swal.mixin({
+  toast: true,
+  position: "top-end",
+  showConfirmButton: false,
+  timer: 3000,
+  timerProgressBar: true,
+  didOpen: (toast) => {
+    toast.onmouseenter = Swal.stopTimer;
+    toast.onmouseleave = Swal.resumeTimer;
+  }
+});
+
 export function CategoriaInsumos() {
   const [categorias, setCategorias] = useState([]);
   const [filteredCategorias, setFilteredCategorias] = useState([]);
@@ -133,31 +145,47 @@ export function CategoriaInsumos() {
   }
     
 
+
+  const validateForm = () => {
+    let valid = true;
+    const newErrors = {};
+    const regexNombre = /^[a-zA-ZáéíóúüÁÉÍÓÚÜ\s]+$/; 
+    const regexDescripcion = /^.{2,50}$/; 
+
+    if (!selectedCategoria.nombre.trim()) {
+      newErrors.nombre = "Por favor, ingrese el nombre de la categoría de insumos.";
+    } else if (selectedCategoria.nombre.length < 4) {
+      newErrors.nombre = "El nombre debe tener al menos 4 caracteres.";
+    } else if (selectedCategoria.nombre.length > 15) {
+      newErrors.nombre = "El nombre no puede tener más de 15 caracteres.";
+    } else if (!regexNombre.test(selectedCategoria.nombre)) {
+      newErrors.nombre = "El nombre solo puede contener letras y espacios.";
+    }
+
+    if (!selectedCategoria.descripcion.trim()) {
+      newErrors.descripcion = "Por favor, ingrese la descripción de la categoría.";
+    } else if (!regexDescripcion.test(selectedCategoria.descripcion)) {
+      newErrors.descripcion = "La descripción debe tener entre 2 y 50 caracteres.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0; 
+    valid = false; 
+  };
+
   const handleSave = async () => {
+    const isValid = validateForm();
+    if (!isValid) {
+      Toast.fire({
+        icon: "error",
+        title: "Por favor, completa todos los campos correctamente.",
+      });
+      return; // Salir si la validación falla
+    }
+
+
+      if (!validateForm()) return; // Verifica si hay errores antes de guardar
     try {
-      const regexNombre = /^[a-zA-ZáéíóúüÁÉÍÓÚÜ\s]+$/; 
-      const regexDescripcion = /^.{2,50}$/; 
-
-      if (!selectedCategoria.nombre.trim()) {
-        errors.nombre = "Por favor, ingrese el nombre de la categoría de insumos.";
-      } else if (selectedCategoria.nombre.length < 4) {
-        errors.nombre = "El nombre debe tener al menos 4 caracteres.";
-      } else if (selectedCategoria.nombre.length > 15) {
-        errors.nombre = "El nombre no puede tener más de 15 caracteres.";
-      } else if (!regexNombre.test(selectedCategoria.nombre)) {
-        errors.nombre = "El nombre solo puede contener letras y espacios.";
-      }
-
-      if (!selectedCategoria.descripcion.trim()) {
-        errors.descripcion = "Por favor, ingrese la descripción de la categoría.";
-      } else if (!regexDescripcion.test(selectedCategoria.descripcion)) {
-        errors.descripcion = "La descripción debe tener entre 2 y 50 caracteres.";
-      }
-      if (Object.keys(errors).length > 0) {
-        setErrors(errors);
-        return;
-      }
-      
       if (editMode) {
         await axios.put(`http://localhost:3000/api/categorias_insumo/${selectedCategoria.id_categoria}`, selectedCategoria);
         setOpen(false);
@@ -175,7 +203,7 @@ export function CategoriaInsumos() {
         });
         Toast.fire({
           icon: "success",
-          title: "Categoría editada exitosamente"
+          title: "La Categoría de Insumos ha sido actualizada correctamente."
         });
       } else {
         await axios.post("http://localhost:3000/api/categorias_insumo", selectedCategoria);
@@ -194,7 +222,7 @@ export function CategoriaInsumos() {
         });
         Toast.fire({
           icon: "success",
-          title: "Categoría creada exitosamente"
+          title: "¡Creación exitosa! Categoría creada exitosamente"
         });
       }
     } catch (error) {
@@ -208,44 +236,7 @@ export function CategoriaInsumos() {
     setSelectedCategoria({ ...selectedCategoria, [name]: value });
   
     // Validaciones en tiempo real
-    const newErrors = { ...errors };
-    const regexNombre = /^[a-zA-ZáéíóúüÁÉÍÓÚÜ\s]+$/; 
-    const regexDescripcion = /^.{5,70}$/; // 
-  
-    if (name === "nombre") {
-      if (!value.trim()) {
-        newErrors.nombre = "Por favor, ingrese el nombre de la categoría de insumos.";
-      } else if (value.length < 4) {
-        newErrors.nombre = "El nombre debe tener al menos 4 caracteres.";
-      } else if (value.length > 15) {
-        newErrors.nombre = "El nombre no puede tener más de 15 caracteres.";
-      } else if (!regexNombre.test(value)) {
-        newErrors.nombre = "El nombre solo puede contener letras y espacios.";
-      } else if (categorias.some(categoria =>
-        categoria.nombre.toLowerCase() === value.toLowerCase() &&
-        (!editMode || categoria.id_categoria !== selectedCategoria.id_categoria) 
-      )) {
-        newErrors.nombre = "El nombre de la categoría ya existe.";
-      } else {
-        delete newErrors.nombre;
-      }
-    }
-  
-    if (name === "descripcion") {
-      if (!value.trim()) {
-        newErrors.descripcion = "Por favor, ingrese la descripción de la categoría.";
-      } else if (value.length < 5) {
-        newErrors.descripcion = "La descripción debe tener al menos 5 caracteres.";
-      } else if (value.length > 70) {
-        newErrors.descripcion = "La descripción no puede tener más de 70 caracteres.";
-      } else if (!regexDescripcion.test(value)) {
-        newErrors.descripcion = "La descripción debe tener entre 5 y 70 caracteres.";
-      } else {
-        delete newErrors.descripcion;
-      }
-    }
-  
-    setErrors(newErrors);
+    validateForm(); // Llama a la función de validación al cambiar el campo
   };
   
   
@@ -363,10 +354,10 @@ export function CategoriaInsumos() {
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Nombre
                     </th>
-                    <th scope="col" className="px-10 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Descripción
+                    <th scope="col" className="px-20 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Descripción Categoría
                     </th>
-                    <th scope="col" className="px-10 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-8 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Estado
                     </th>
                     <th scope="col" className="px-12 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -378,7 +369,7 @@ export function CategoriaInsumos() {
                   {currentCategorias.map((categoria) => (
                     <tr key={categoria.id_categoria}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{categoria.nombre}</td>
-                      <td className="px-12 py-4 whitespace-nowrap text-sm text-gray-500">{categoria.descripcion}</td>
+                      <td className="px-20 py-4 whitespace-nowrap text-sm text-gray-500">{categoria.descripcion}</td>
                       <td className="px-10 py-4 whitespace-nowrap text-sm text-gray-500">
     <label className="inline-flex relative items-center cursor-pointer">
         <input
@@ -480,22 +471,22 @@ export function CategoriaInsumos() {
   <DialogBody divider className="space-y-4">
     <div className="space-y-3">
       <Input
-        label="Nombre de la categoría"
+        label="Nombre de la Categoría de Insumos"
         name="nombre"
         value={selectedCategoria.nombre}
         onChange={handleChange}
         required
-        error={errors.nombre}
+        
         className="w-full"
       />
       {errors.nombre && <Typography color="red" className="text-sm">{errors.nombre}</Typography>}
       <Textarea
-        label="Breve descripción"
+        label="Breve descripción de la Categoría"
         name="descripcion"
         value={selectedCategoria.descripcion}
         onChange={handleChange}
         required
-        error={errors.descripcion}
+        
         className="w-full"
         rows="4"
       />

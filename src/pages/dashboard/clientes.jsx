@@ -151,15 +151,63 @@ export function Clientes() {
   const handleDetailsOpen = () => setDetailsOpen(!detailsOpen);
 
   const handleToggleEstado = async (cliente) => {
-    try {
-      await axios.patch(`http://localhost:3000/api/clientes/${cliente.id_cliente}/estado`, {
-        estado: !cliente.estado,
+    // Suponiendo que tienes una función que verifica las asociaciones
+    const tieneAsociaciones = await verificarAsociaciones(cliente.id_cliente);
+  
+    // Si el cliente está asociado a un pedido o venta, muestra un mensaje y termina la función
+    if (cliente.estado && tieneAsociaciones) {
+      Swal.fire({
+        icon: 'error',
+        title: 'No se puede desactivar el cliente',
+        text: 'Este cliente está asociado a un pedido o a una venta.',
+        confirmButtonColor: '#A62A64',
+        confirmButtonText: 'Aceptar'
       });
-      fetchClientes();
-    } catch (error) {
-      console.error("Error updating cliente estado:", error);
+      return; // Salir de la función
+    }
+  
+    const result = await Swal.fire({
+      title: `¿Estás seguro?`,
+      text: `¿Deseas ${cliente.estado ? 'desactivar' : 'activar'} el cliente?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#A62A64',
+      cancelButtonColor: '#000000',
+      confirmButtonText: `Sí, ${cliente.estado ? 'desactivar' : 'activar'}`,
+      cancelButtonText: 'Cancelar'
+    });
+  
+    if (result.isConfirmed) {
+      try {
+        await axios.patch(`http://localhost:3000/api/clientes/${cliente.id_cliente}/estado`, {
+          estado: !cliente.estado,
+        });
+        fetchClientes();
+        Toast.fire({
+          icon: 'success',
+          title: `El cliente ha sido ${!cliente.estado ? 'activado' : 'desactivado'} correctamente.`,
+        });
+      } catch (error) {
+        console.error("Error al cambiar el estado del cliente:", error);
+        Toast.fire({
+          icon: 'error',
+          title: 'Hubo un problema al cambiar el estado del cliente.',
+        });
+      }
     }
   };
+  
+  // Ejemplo de función para verificar asociaciones (implementación debe adaptarse a tu lógica)
+  const verificarAsociaciones = async (id_cliente) => {
+    try {
+      const response = await axios.get(`http://localhost:3000/api/clientes/${id_cliente}/verificar-asociaciones`);
+      return response.data.asociado; // Supongamos que devuelve un booleano
+    } catch (error) {
+      console.error("Error al verificar asociaciones:", error);
+      return false; // Si hay un error, asumimos que no hay asociaciones
+    }
+  };
+  
 
   const indexOfLastCliente = currentPage * clientesPerPage;
   const indexOfFirstCliente = indexOfLastCliente - clientesPerPage;
@@ -218,7 +266,7 @@ export function Clientes() {
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Número de teléfono
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-16 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Email
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">

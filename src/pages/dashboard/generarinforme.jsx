@@ -32,6 +32,53 @@ export function GenerarInforme({ onCancel }) { // onCancel para manejar el botó
   };
 
   const handleGenerarInforme = async () => {
+    // Validar fechas
+    if (!fechaInicio || !fechaFin) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Ambas fechas deben ser seleccionadas.',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+      });
+      return;
+    }
+
+    // Convertir las fechas a objetos Date
+    const fechaInicioDate = new Date(fechaInicio);
+    const fechaFinDate = new Date(fechaFin);
+
+    // Validar que la fecha de inicio no sea mayor que la fecha de fin
+    if (fechaInicioDate > fechaFinDate) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'La fecha de inicio no puede ser mayor que la fecha de fin.',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+      });
+      return;
+    }
+
+    // Validar que las fechas no sean futuras
+    const fechaActual = new Date();
+    if (fechaInicioDate > fechaActual || fechaFinDate > fechaActual) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Las fechas no pueden ser futuras.',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+      });
+      return;
+    }
+
     try {
       const response = await axios.get('http://localhost:3000/api/compras'); // Obtener todas las compras
       const compras = response.data;
@@ -85,13 +132,21 @@ export function GenerarInforme({ onCancel }) { // onCancel para manejar el botó
 
       setInformeGenerado(true); // Marcar que el informe ha sido generado
 
-      Swal.fire({
-        icon: 'success',
-        title: 'Informe generado con éxito',
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end', // Puedes cambiar la posición según lo desees
         showConfirmButton: false,
         timer: 2000,
+        timerProgressBar: true,
+       
+        
       });
-
+      
+      Toast.fire({
+        icon: 'success',
+        title: 'Informe de Compras generado con éxito.'
+      });
+      
     } catch (error) {
       console.error("Error generando informe:", error);
       Swal.fire({

@@ -150,7 +150,6 @@ export function Usuarios() {
   const indexOfLastUsuario = currentPage * usuariosPerPage;
   const indexOfFirstUsuario = indexOfLastUsuario - usuariosPerPage;
   const currentUsuarios = filteredUsuarios.slice(indexOfFirstUsuario, indexOfLastUsuario);
-
   const pageNumbers = [];
   for (let i = 1; i <= Math.ceil(filteredUsuarios.length / usuariosPerPage); i++) {
     pageNumbers.push(i);
@@ -214,7 +213,7 @@ export function Usuarios() {
   Crear Usuario
 </Button>
 
-          <input
+  <input
   type="text"
   placeholder="Buscar por nombre de Usuario..."
   value={search}

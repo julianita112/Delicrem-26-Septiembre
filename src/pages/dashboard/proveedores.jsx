@@ -165,19 +165,28 @@ export function Proveedores() {
 
 
   const handleSave = async () => {
+    const isValid = validateForm();
+    if (!isValid) {
+      Toast.fire({
+        icon: "error",
+        title: "Por favor, completa todos los campos correctamente.",
+      });
+      return; // Salir si la validación falla
+    }
+  
     if (validateForm()) {
       try {
         if (editMode) {
           await axios.put(`http://localhost:3000/api/proveedores/${selectedProveedor.id_proveedor}`, selectedProveedor);
           Toast.fire({
             icon: 'success',
-            title: 'Proveedor actualizado exitosamente.'
+            title: 'El proveedor ha sido actualizado correctamente.'
           });
         } else {
           await axios.post("http://localhost:3000/api/proveedores", selectedProveedor);
           Toast.fire({
             icon: 'success',
-            title: 'Proveedor creado exitosamente.'
+            title: '¡Creación exitosa! El Proveedor creado exitosamente.'
           });
         }
         fetchProveedores(); // Refrescar la lista de proveedores
@@ -188,63 +197,83 @@ export function Proveedores() {
       }
     }
   };
-
-  const validateForm = () => {
+  
+  const validateForm = (currentData = selectedProveedor) => {
     let isValid = true;
     const errors = {};
-
+  
     // Validar nombre del proveedor
-    if (!selectedProveedor.nombre.trim()) {
+    if (!currentData.nombre.trim()) {
       errors.nombre = 'El nombre del proveedor es requerido.';
       isValid = false;
-    } else if (selectedProveedor.nombre.trim().length < 4) {
+    } else if (currentData.nombre.trim().length < 4) {
       errors.nombre = 'El nombre del proveedor debe contener al menos 4 letras.';
       isValid = false;
-    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(selectedProveedor.nombre)) {
+    } else if (currentData.nombre.trim().length > 20) {
+      errors.nombre = 'El nombre del proveedor no puede tener más de 20 letras.';
+      isValid = false;
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(currentData.nombre)) {
       errors.nombre = 'El nombre del proveedor solo puede contener letras y espacios.';
       isValid = false;
     }
-
+  
     // Validar tipo de documento
-    if (!selectedProveedor.tipo_documento.trim()) {
+    if (!currentData.tipo_documento.trim()) {
       errors.tipo_documento = 'El tipo de documento es requerido.';
       isValid = false;
     }
-
+  
     // Validar número de documento
-    if (!selectedProveedor.numero_documento.trim()) {
+    if (!currentData.numero_documento.trim()) {
       errors.numero_documento = 'El número de documento es requerido.';
       isValid = false;
+    } else if (!/^\d{7,10}$/.test(currentData.numero_documento)) {
+      errors.numero_documento = 'El número de documento debe contener entre 7 y 10 dígitos numéricos.';
+      isValid = false;
     }
-
+  
     // Validar número de contacto
-    if (!selectedProveedor.contacto.trim()) {
+    if (!currentData.contacto.trim()) {
       errors.contacto = 'El número de contacto es requerido.';
       isValid = false;
-    } else if (!/^\d{7,}$/.test(selectedProveedor.contacto)) {
-      errors.contacto = 'El número de contacto debe contener al menos 7 dígitos numéricos.';
+    } else if (!/^\d{6,12}$/.test(currentData.contacto)) {
+      errors.contacto = 'El número de contacto debe contener entre 6 y 12 dígitos numéricos.';
       isValid = false;
     }
-
+  
     // Validar nombre del asesor
-    if (!selectedProveedor.asesor.trim()) {
+    if (!currentData.asesor.trim()) {
       errors.asesor = 'El nombre del asesor es requerido.';
       isValid = false;
-    } else if (selectedProveedor.asesor.trim().length < 4) {
+    } else if (currentData.asesor.trim().length < 4) {
       errors.asesor = 'El nombre del asesor debe contener al menos 4 letras.';
       isValid = false;
-    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(selectedProveedor.asesor)) {
+    } else if (currentData.asesor.trim().length > 20) {
+      errors.asesor = 'El nombre del asesor no puede tener más de 20 letras.';
+      isValid = false;
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(currentData.asesor)) {
       errors.asesor = 'El nombre del asesor solo puede contener letras y espacios.';
       isValid = false;
     }
-
+  
     setFormErrors(errors);
     return isValid;
   };
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setSelectedProveedor({ ...selectedProveedor, [name]: value });
+  
+    // Limpiar errores de validación para el campo específico
+    if (formErrors[name]) {
+      const newErrors = { ...formErrors };
+      delete newErrors[name];
+      setFormErrors(newErrors);
+    }
+  
+    // Llamar a la validación en tiempo real
+    validateForm({ ...selectedProveedor, [name]: value });
   };
 
   const handleSearchChange = (e) => {
@@ -467,7 +496,7 @@ export function Proveedores() {
               onChange={handleChange}
               label="Nombre del proveedor"
               required
-              error={formErrors.nombre && formErrors.nombre.length > 0}
+             
             />
             {formErrors.nombre && (
               <Typography color="red" className="text-sm">
@@ -475,22 +504,33 @@ export function Proveedores() {
               </Typography>
             )}
             <Select
-              label="Tipo de Documento"
-              name="tipo_documento"
-              value={selectedProveedor.tipo_documento}
-              onChange={(e) => setSelectedProveedor({ ...selectedProveedor, tipo_documento: e })}
-              required
-              error={formErrors.tipo_documento && formErrors.tipo_documento.length > 0}
-            >
-              <Option value="CC">CC</Option>
-              <Option value="NIT">NIT</Option>
-              <Option value="PP">PP</Option>
-              <Option value="CE">CE</Option>
-            </Select>
-            {formErrors.tipo_documento && (
-              <Typography color="red" className="text-sm">
-                {formErrors.tipo_documento}
-              </Typography>
+  label="Tipo de Documento"
+  name="tipo_documento"
+  value={selectedProveedor.tipo_documento}
+  onChange={(e) => {
+    const value = e; // Suponiendo que `e` es el valor seleccionado
+    setSelectedProveedor({ ...selectedProveedor, tipo_documento: value });
+    
+    // Limpiar el error de validación para tipo_documento
+    if (formErrors.tipo_documento) {
+      const newErrors = { ...formErrors };
+      delete newErrors.tipo_documento;
+      setFormErrors(newErrors);
+    }
+  }}
+  required
+>
+  <Option value="CC">CC</Option>
+  <Option value="NIT">NIT</Option>
+  <Option value="PP">PP</Option>
+  <Option value="CE">CE</Option>
+</Select>
+{formErrors.tipo_documento && (
+  <Typography color="red" className="text-sm">
+    {formErrors.tipo_documento}
+  </Typography>
+
+
             )}
             <Input
               type="text"
@@ -499,7 +539,7 @@ export function Proveedores() {
               onChange={handleChange}
               label="Número de Documento"
               required
-              error={formErrors.numero_documento && formErrors.numero_documento.length > 0}
+              
             />
             {formErrors.numero_documento && (
               <Typography color="red" className="text-sm">
@@ -513,7 +553,7 @@ export function Proveedores() {
               onChange={handleChange}
               label="Número de contacto"
               required
-              error={formErrors.contacto && formErrors.contacto.length > 0}
+             
             />
             {formErrors.contacto && (
               <Typography color="red" className="text-sm">
@@ -527,7 +567,7 @@ export function Proveedores() {
               onChange={handleChange}
               label="Nombre del asesor"
               required
-              error={formErrors.asesor && formErrors.asesor.length > 0}
+             
             />
             {formErrors.asesor && (
               <Typography color="red" className="text-sm">

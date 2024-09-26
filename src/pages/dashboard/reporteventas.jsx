@@ -24,6 +24,51 @@ export function ReporteVentas() {
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte de Ventas");
 
+      // Ajustar el ancho de las columnas
+      const columnWidths = [
+        { wch: 20 }, // Número de Venta
+        { wch: 25 }, // Cliente
+        { wch: 15 }, // Fecha de Venta
+        { wch: 15 }, // Fecha de Entrega
+        { wch: 10 }, // Estado
+        { wch: 15 }, // Total
+        { wch: 10 }, // Pagado
+        { wch: 25 }, // Anulación
+      ];
+
+      worksheet['!cols'] = columnWidths; // Aplicar el ancho a las columnas
+
+      // Formato de celda opcional
+      const range = XLSX.utils.decode_range(worksheet['!ref']);
+      for (let row = range.s.r; row <= range.e.r; ++row) {
+        for (let col = range.s.c; col <= range.e.c; ++col) {
+          const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+          if (!worksheet[cellAddress]) continue; // Salta si la celda está vacía
+          worksheet[cellAddress].s = {
+            fill: {
+              fgColor: { rgb: "FFFFFF" }, // Color de fondo blanco
+            },
+            font: {
+              name: "Arial",
+              sz: 12,
+              color: { rgb: "000000" }, // Color de texto negro
+              bold: false,
+              italic: false,
+            },
+            alignment: {
+              horizontal: "center",
+              vertical: "center",
+            },
+            border: {
+              top: { style: "thin", color: { rgb: "000000" } },
+              bottom: { style: "thin", color: { rgb: "000000" } },
+              left: { style: "thin", color: { rgb: "000000" } },
+              right: { style: "thin", color: { rgb: "000000" } },
+            },
+          };
+        }
+      }
+
       XLSX.writeFile(workbook, "reporte_ventas.xlsx");
 
       Swal.fire({

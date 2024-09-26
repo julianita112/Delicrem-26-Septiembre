@@ -114,7 +114,7 @@ export function CrearCompra({ handleClose, fetchCompras, proveedores, insumos })
       await axios.post("http://localhost:3000/api/compras", compraToSave);
       Toast.fire({
         icon: "success",
-        title: "La compra ha sido creada correctamente.",
+        title: "¡Creación exitosa! La compra ha sido creada correctamente.",
       });
       fetchCompras();
       handleClose();

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { debounce } from 'lodash';
 import {
   Dialog,
   DialogHeader,
@@ -57,9 +58,19 @@ const CrearUsuario = ({
     });
   };
 
-  const validateFields = (user) => {
+  const checkExistenceInDB = async (field, value) => {
+    try {
+      const response = await axios.get(`http://localhost:3000/api/check-existence?field=${field}&value=${value}`);
+      return response.data.exists;
+    } catch (error) {
+      console.error(`Error checking ${field} existence:`, error);
+      return false;
+    }
+  };
+  
+  const validateFields = async (user) => {
     const errors = {};
-
+  
     // Validación del nombre
     if (!user.nombre) {
       errors.nombre = 'El nombre es obligatorio.';
@@ -69,8 +80,13 @@ const CrearUsuario = ({
       errors.nombre = 'El nombre no debe exceder los 30 caracteres.';
     } else if (/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/.test(user.nombre)) {
       errors.nombre = 'El nombre no debe incluir caracteres especiales ni números.';
+    } else {
+      const exists = await checkExistenceInDB('nombre', user.nombre);
+      if (exists) {
+        errors.nombre = 'Este nombre ya está registrado en la base de datos.';
+      }
     }
-
+  
     // Validación del email
     if (!user.email) {
       errors.email = 'El correo electrónico es obligatorio.';
@@ -84,16 +100,21 @@ const CrearUsuario = ({
       errors.email = 'El correo electrónico debe contener un símbolo @.';
     } else if (!/^[A-Za-z0-9.-]+\.[A-Z]{2,}$/i.test(user.email.split('@')[1])) {
       errors.email = 'El dominio del correo electrónico (después del @) debe tener un formato válido.';
+    } else {
+      const exists = await checkExistenceInDB('email', user.email);
+      if (exists) {
+        errors.email = 'Este correo electrónico ya está registrado en la base de datos.';
+      }
     }
-
+  
     // Validación de la contraseña
     if (!editMode) {
       if (!user.password) {
         errors.password = 'La contraseña es obligatoria.';
       } else if (user.password.length < 8) {
         errors.password = 'La contraseña debe tener al menos 8 caracteres.';
-      } else if (user.password.length > 15) {
-        errors.password = 'La contraseña no debe exceder los 15 caracteres.';
+      } else if (user.password.length > 20) {
+        errors.password = 'La contraseña no debe exceder los 20 caracteres.';
       } else if (!/[A-Za-z]/.test(user.password)) {
         errors.password = 'La contraseña debe contener al menos una letra (a-z, A-Z).';
       } else if (!/[0-9]/.test(user.password)) {
@@ -102,64 +123,105 @@ const CrearUsuario = ({
         errors.password = 'La contraseña debe contener al menos un carácter especial: !@#$%^&*()_+={}[]:;\'"<>,.?/\\|-';
       }
     }
-
-    // Validación del tipo de documento
+  
     if (!user.tipo_documento) {
       errors.tipo_documento = "Debe seleccionar un tipo de documento.";
     }
-
-    // Validación del número de documento
+  
     if (!user.numero_documento) {
       errors.numero_documento = "Debe ingresar un número de documento.";
+    } else {
+      const exists = await checkExistenceInDB('numero_documento', user.numero_documento);
+      if (exists) {
+        errors.numero_documento = 'Este número de documento ya está registrado en la base de datos.';
+      }
     }
-
-    // Validación del género
+  
     if (!user.genero) {
       errors.genero = "Debe seleccionar un género.";
     }
-
-    // Validación de la nacionalidad
+  
     if (!user.nacionalidad) {
       errors.nacionalidad = "Debe ingresar una nacionalidad.";
     }
-
-    // Validación del teléfono
+  
     if (!user.telefono) {
       errors.telefono = "Debe ingresar un número de teléfono.";
+    } else {
+      const exists = await checkExistenceInDB('telefono', user.telefono);
+      if (exists) {
+        errors.telefono = 'Este número de teléfono ya está registrado en la base de datos.';
+      }
     }
-
-    // Validación de la dirección
+  
     if (!user.direccion) {
       errors.direccion = "Debe ingresar una dirección.";
     }
-
-    // Validación del rol
+  
     if (!user.id_rol) {
       errors.id_rol = 'Debe seleccionar un rol.';
     } else {
-      // Elimina el error si se selecciona un rol válido
       delete errors.id_rol;
     }
-
+  
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
-
-  const handleChange = (e) => {
+  
+  const handleChange = async (e) => {
     const { name, value } = e.target;
     const updatedUser = { ...selectedUser, [name]: value };
     setSelectedUser(updatedUser);
-    validateFields(updatedUser);  // Validar en tiempo real
-  };
 
-  const handleSelectChange = (name, value) => {
+    // Validar en tiempo real
+    await validateFields(updatedUser);
+
+    // Validación en tiempo real para duplicados
+    if (name === "nombres" || name === "email" || name === "numero_documento" || name === "telefono") {
+        if (value.length > 0) {
+            const existingUser = await checkUserExists(name, value);
+            if (existingUser) {
+                setErrors((prevErrors) => ({
+                    ...prevErrors,
+                    [name]: `${name.charAt(0).toUpperCase() + name.slice(1)} ya existe.`
+                }));
+            } else {
+                setErrors((prevErrors) => ({
+                    ...prevErrors,
+                    [name]: ""
+                }));
+            }
+        } else {
+            // Si el campo está vacío, limpia el error
+            setErrors((prevErrors) => ({
+                ...prevErrors,
+                [name]: ""
+            }));
+        }
+    }
+};
+
+// Función para verificar si el usuario existe en la tabla principal
+const checkUserExists = async (field, value) => {
+    try {
+        const response = await axios.get(`http://localhost:3000/api/usuarios`); // Consulta toda la tabla
+        const userExists = response.data.some(user => user[field] === value); // Verifica si el valor ya existe
+        return userExists;
+    } catch (error) {
+        console.error("Error al verificar la existencia del usuario:", error);
+        return false;
+    }
+};
+
+  
+  const handleSelectChange = async (name, value) => {
     const updatedUser = { ...selectedUser, [name]: value };
     setSelectedUser(updatedUser);
-    validateFields(updatedUser);  // Validar en tiempo real
+    await validateFields(updatedUser);  // Validar en tiempo real
   };
-
+  
   const handleSave = async () => {
-    const isValid = validateFields(selectedUser);
+    const isValid = await validateFields(selectedUser);
     if (!isValid) {
       Toast.fire({
         icon: "error",
@@ -167,7 +229,7 @@ const CrearUsuario = ({
       });
       return;
     }
-
+  
     try {
       if (editMode) {
         await axios.put(
@@ -177,14 +239,14 @@ const CrearUsuario = ({
         fetchUsuarios();
         Toast.fire({
           icon: "success",
-          title: "¡Actualizado! El usuario ha sido actualizado correctamente.",
+          title: "El usuario ha sido actualizado correctamente.",
         });
       } else {
         await axios.post("http://localhost:3000/api/usuarios/registro", selectedUser);
         fetchUsuarios();
         Toast.fire({
           icon: "success",
-          title: "¡Creado! El usuario ha sido creado correctamente.",
+          title: "¡Creación exitosa! El usuario ha sido creado correctamente.",
         });
       }
       handleOpen();
@@ -196,7 +258,6 @@ const CrearUsuario = ({
       });
     }
   };
-
   return (
     <Dialog
       open={open}

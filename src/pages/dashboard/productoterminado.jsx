@@ -103,10 +103,19 @@ export function ProductoTerminado() {
   };
 
   const handleSave = async () => {
-    if (!validateForm()) {
-      return;
+    const isValid = validateForm();
+    if (!isValid) {
+      Toast.fire({
+        icon: "error",
+        title: "Por favor, completa todos los campos correctamente.",
+      });
+      return; // Salir si la validación falla
     }
-
+    
+    
+    
+    
+    if (!validateForm()) return; // Verifica si hay errores antes de guardar
     try {
       if (editMode) {
         await axios.put(`http://localhost:3000/api/productos/${selectedProducto.id_producto}`, selectedProducto);
@@ -118,7 +127,7 @@ export function ProductoTerminado() {
         await axios.post("http://localhost:3000/api/productos", selectedProducto);
         Toast.fire({
           icon: 'success',
-          title: 'El producto ha sido creado correctamente.'
+          title: '¡Creación exitosa! El producto ha sido creado correctamente.'
         });
       }
       fetchProductos();
@@ -134,26 +143,46 @@ export function ProductoTerminado() {
 
   const validateForm = () => {
     const newErrors = {};
-
+  
+    // Validación del nombre
     if (!selectedProducto.nombre) {
       newErrors.nombre = "El nombre es requerido";
-    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,}$/.test(selectedProducto.nombre)) {
-      newErrors.nombre = "El nombre debe tener al menos 3 caracteres y solo puede contener letras, tildes y espacios";
+    } else if (selectedProducto.nombre.length < 2 || selectedProducto.nombre.length > 15) {
+      newErrors.nombre = "El nombre debe tener entre 3 y 15 caracteres";
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(selectedProducto.nombre)) {
+      newErrors.nombre = "El nombre solo puede contener letras, tildes y espacios";
     }
-
+  
+    // Validación de la descripción
     if (!selectedProducto.descripcion) {
       newErrors.descripcion = "La descripción es requerida";
-    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{5,}$/.test(selectedProducto.descripcion)) {
-      newErrors.descripcion = "La descripción debe tener al menos 5 caracteres y solo puede contener letras, tildes y espacios";
+    } else if (selectedProducto.descripcion.length < 5 || selectedProducto.descripcion.length > 25) {
+      newErrors.descripcion = "La descripción debe tener entre 5 y 25 caracteres";
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(selectedProducto.descripcion)) {
+      newErrors.descripcion = "La descripción solo puede contener letras, tildes y espacios";
     }
+  
+// Validación del precio
+if (!selectedProducto.precio) {
+  newErrors.precio = "El precio es requerido";
+} else if (selectedProducto.precio.length < 3 || selectedProducto.precio.length > 4) {
+  newErrors.precio = "El precio debe contener entre 3 y 4 dígitos";
+} else if (!/^\d+$/.test(selectedProducto.precio)) {
+  newErrors.precio = "El precio solo puede contener números";
+} else if (selectedProducto.precio === "0" || selectedProducto.precio === "0000") {
+  newErrors.precio = "El precio no puede ser 0 o 0000";
+}
 
-    if (!selectedProducto.precio) {
-      newErrors.precio = "El precio es requerido";
-    } else if (!/^\d+$/.test(selectedProducto.precio)) {
-      newErrors.precio = "El precio solo puede contener números";
-    }
+  
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+  
+  
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setSelectedProducto({ ...selectedProducto, [name]: value });
+    validateForm(); // Llamar a la validación en tiempo real
   };
 
   const handleDelete = async (producto) => {
@@ -197,10 +226,7 @@ export function ProductoTerminado() {
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setSelectedProducto({ ...selectedProducto, [name]: value });
-  };
+ 
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
@@ -212,23 +238,79 @@ export function ProductoTerminado() {
   };
 
   const toggleActivo = async (id_producto, estado) => {
-    try {
-      await axios.patch(`http://localhost:3000/api/productos/${id_producto}/estado`, { estado: !estado });
-      fetchProductos();
-      fetchProductosActivos();
-      Toast.fire({
-        icon: 'success',
-        title: `El producto ha sido ${!estado ? 'activado' : 'desactivado'} correctamente.`,
-      });
-    } catch (error) {
-      console.error("Error al cambiar el estado del producto:", error);
-      Toast.fire({
-        icon: 'error',
-        title: 'Hubo un problema al cambiar el estado del producto.',
-      });
+    const result = await Swal.fire({
+      title: `¿Estás seguro?`,
+      text: `¿Deseas ${estado ? 'desactivar' : 'activar'} el producto?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#A62A64',
+      cancelButtonColor: '#000000',
+      confirmButtonText: `Sí, ${estado ? 'desactivar' : 'activar'}`,
+      cancelButtonText: 'Cancelar'
+    });
+  
+    if (result.isConfirmed) {
+      try {
+        // Verificar si hay productos asignados a una orden de producción
+        const ordenesResponse = await axios.get(`http://localhost:3000/api/ordenesProduccion`);
+        const productosConOrden = ordenesResponse.data.filter(orden => orden.id_producto === id_producto);
+  
+        // Verificar si hay productos asignados a una venta
+        const ventasResponse = await axios.get(`http://localhost:3000/api/ventas`);
+        const productosConVenta = ventasResponse.data.filter(venta => venta.id_producto === id_producto);
+  
+        if (productosConOrden.length > 0 || productosConVenta.length > 0) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'No se puede desactivar el producto',
+            text: `Hay ${productosConOrden.length} orden(es) de producción y ${productosConVenta.length} venta(s) con este producto asignado.`,
+            confirmButtonColor: '#A62A64',
+            background: '#fff',
+            confirmButtonText: 'Aceptar'
+          });
+          return;
+        }
+  
+        await axios.patch(`http://localhost:3000/api/productos/${id_producto}/estado`, { estado: !estado });
+        fetchProductos();
+        fetchProductosActivos();
+        const Toast = Swal.mixin({
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          didOpen: (toast) => {
+            toast.onmouseenter = Swal.stopTimer;
+            toast.onmouseleave = Swal.resumeTimer;
+          }
+        });
+        Toast.fire({
+          icon: 'success',
+          title: `El producto ha sido ${!estado ? 'activado' : 'desactivado'} correctamente.`,
+        });
+      } catch (error) {
+        console.error("Error al cambiar el estado del producto:", error);
+        const Toast = Swal.mixin({
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          didOpen: (toast) => {
+            toast.onmouseenter = Swal.stopTimer;
+            toast.onmouseleave = Swal.resumeTimer;
+          }
+        });
+        Toast.fire({
+          icon: 'error',
+          title: 'Hubo un problema al cambiar el estado del producto.',
+        });
+      }
     }
   };
-
+  
+  
   const indexOfLastProducto = currentPage * productosPerPage;
   const indexOfFirstProducto = indexOfLastProducto - productosPerPage;
   const currentProductos = filteredProductos.slice(indexOfFirstProducto, indexOfLastProducto);
@@ -251,14 +333,17 @@ export function ProductoTerminado() {
             Crear Producto
           </Button>
 
-          <div className="mb-6">
-            <Input
-              type="text"
-              placeholder="Buscar por nombre..."
-              value={search}
-              onChange={handleSearchChange}
-            />
-          </div>       
+         
+          <input
+  type="text"
+  placeholder="Buscar por nombre de Producto..."
+  value={search}
+  onChange={handleSearchChange}
+  className="border border-gray-300 rounded-md focus:border-blue-500 appearance-none shadow-none py-2 px-4 text-sm"
+  style={{ width: '265px', marginLeft: '400px' }} // Ajuste en el margen izquierdo
+/>
+
+                
           <div className="mb-1">
             <Typography variant="h5" color="blue-gray" className="mb-4">
               Lista de Productos
@@ -283,11 +368,11 @@ export function ProductoTerminado() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {currentProductos.map((producto) => (
                     <tr key={producto.id_producto}>
-                      <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{producto.nombre}</td>
-                      <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500">{producto.descripcion}</td>
-                      <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500">{producto.precio}</td>
-                      <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500">{producto.stock}</td>
-                      <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{producto.nombre}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{producto.descripcion}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{producto.precio}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{producto.stock}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <label className="inline-flex relative items-center cursor-pointer">
   <input
     type="checkbox"
@@ -365,43 +450,48 @@ export function ProductoTerminado() {
       </Card>
 
       <Dialog open={open} handler={handleOpen} className="max-w-md w-11/12 p-6 bg-white rounded-lg shadow-lg" size="xs">
-        <DialogHeader className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-4">
+        <DialogHeader className="text-lg font-semibold  border-b border-gray-200 pb-4">
           {editMode ? "Editar Producto Terminado" : "Crear Producto Terminado"}
         </DialogHeader>
         <DialogBody className="space-y-4">
           <div>
             <Input
               name="nombre"
-              label="Nombre"
+              label="Nombre del Producto"
               required
               value={selectedProducto.nombre}
               onChange={handleChange}
-              error={errors.nombre}
+              
               className="rounded-lg border-gray-300"
             />
             {errors.nombre && <Typography className="text-red-500 mt-1 text-sm">{errors.nombre}</Typography>}
           </div>
           <div>
-            <Input
-              name="descripcion"
-              label="Descripción"
-              value={selectedProducto.descripcion}
-              error={errors.descripcion}
-              required
-              onChange={handleChange}
-              className="rounded-lg border-gray-300"
-            />
-            {errors.descripcion && <Typography className="text-red-500 mt-1 text-sm">{errors.descripcion}</Typography>}
-          </div>
+  <label className="block text-sm font-medium text-gray-700" htmlFor="descripcion">
+    Descripción del producto
+  </label>
+  <textarea
+    name="descripcion"
+    value={selectedProducto.descripcion}
+    required
+    onChange={handleChange}
+    className="mt-2 block w-full rounded-lg border border-gray-300 focus:border-gray-500 focus:ring focus:ring-gray-200"
+    rows="3" // Puedes ajustar el número de filas según tus necesidades
+  />
+  {errors.descripcion && (
+    <Typography className="text-red-500 mt-1 text-sm">{errors.descripcion}</Typography>
+  )}
+</div>
+
           <div>
             <Input
               name="precio"
-              label="Precio"
+              label="Precio Unitario"
               type="number"
               value={selectedProducto.precio}
               onChange={handleChange}
               required
-              error={errors.precio}
+             
               className="rounded-lg border-gray-300"
             />
             {errors.precio && <Typography className="text-red-500 mt-1 text-sm">{errors.precio}</Typography>}

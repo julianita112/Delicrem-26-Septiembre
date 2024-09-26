@@ -103,7 +103,7 @@ export function EditarFichaTecnica({ handleClose, fetchFichas, ficha, productos,
       await axios.put(`http://localhost:3000/api/fichastecnicas/${selectedFicha.id_ficha}`, fichaToSave);
       Toast.fire({
         icon: 'success',
-        title: '¡Actualización exitosa! La ficha técnica ha sido actualizada correctamente.'
+        title: 'La ficha técnica ha sido actualizada correctamente.'
       });
       fetchFichas();
       handleClose();

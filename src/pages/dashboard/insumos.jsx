@@ -149,28 +149,28 @@ export function Insumos() {
 
   const handleSave = async () => {
     try {
-      const regex = /^[a-zA-ZáéíóúüÁÉÍÓÚÜ\s]+$/;
-      const errors = {};
-
-      if (!selectedInsumo.nombre.trim()) {
-        errors.nombre = "Por favor, ingrese el nombre del insumo";
-      } else if (!regex.test(selectedInsumo.nombre)) {
-        errors.nombre = "El nombre del insumo solo puede contener letras y espacios";
-      }
-
-      if (!selectedInsumo.id_categoria) {
-        errors.id_categoria = "Por favor, ingrese la categoría del insumo";
-      }
-
-      if (!selectedInsumo.unidad_medida) {
-        errors.unidad_medida = "Por favor, seleccione la unidad de medida";
-      }
-
+      const errors = validateForm();
+  
       if (Object.keys(errors).length > 0) {
         setErrors(errors);
+        const Toast = Swal.mixin({
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          didOpen: (toast) => {
+            toast.onmouseenter = Swal.stopTimer;
+            toast.onmouseleave = Swal.resumeTimer;
+          }
+        });
+        Toast.fire({
+          icon: "error",
+          title: "Por favor, completa todos los campos correctamente.",
+        });
         return;
       }
-
+  
       if (editMode) {
         await axios.put(`http://localhost:3000/api/insumos/${selectedInsumo.id_insumo}`, selectedInsumo);
         setOpen(false);
@@ -188,7 +188,7 @@ export function Insumos() {
         });
         Toast.fire({
           icon: "success",
-          title: "Insumo editado exitosamente"
+          title: "El Insumo ha sido actualizado correctamente."
         });
       } else {
         await axios.post("http://localhost:3000/api/insumos", selectedInsumo);
@@ -207,7 +207,7 @@ export function Insumos() {
         });
         Toast.fire({
           icon: "success",
-          title: "Insumo creado exitosamente"
+          title: "¡Creación exitosa! Insumo creado exitosamente"
         });
       }
     } catch (error) {
@@ -215,12 +215,43 @@ export function Insumos() {
       Swal.fire('Error', 'Hubo un problema al guardar el insumo.', 'error');
     }
   };
+  
 
+  const validateForm = () => {
+    const regex = /^[a-zA-ZáéíóúüÁÉÍÓÚÜ0-9\s]+$/; // Permitir letras y números
+    const errors = {};
+    
+    // Validación del nombre del insumo
+    if (!selectedInsumo.nombre.trim()) {
+      errors.nombre = "Por favor, ingrese el nombre del insumo";
+    } else if (!regex.test(selectedInsumo.nombre)) {
+      errors.nombre = "El nombre del insumo solo puede contener letras, números y espacios";
+    } else if (selectedInsumo.nombre.length < 3 || selectedInsumo.nombre.length > 20) {
+      errors.nombre = "El nombre del insumo debe tener entre 3 y 20 caracteres";
+    }
+    
+    // Validación de la categoría
+    if (!selectedInsumo.id_categoria) {
+      errors.id_categoria = "Por favor, ingrese la categoría del insumo";
+    }
+  
+    // Validación de la unidad de medida
+    if (!selectedInsumo.unidad_medida) {
+      errors.unidad_medida = "Por favor, seleccione la unidad de medida";
+    }
+  
+    return errors;
+  };
+  
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setSelectedInsumo({ ...selectedInsumo, [name]: value });
-    setErrors({ ...errors, [name]: "" });
+    const validationErrors = validateForm(); // Llama a validateForm para verificar errores
+    setErrors(validationErrors); // Actualiza los errores en el estado
   };
+  
+
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
@@ -376,7 +407,7 @@ export function Insumos() {
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Estado
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-10 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
@@ -486,19 +517,19 @@ export function Insumos() {
               value={selectedInsumo.nombre}
               onChange={handleChange}
               required
-              error={errors.nombre}
+            
               className="rounded-lg border-gray-300"
             />
             {errors.nombre && <Typography className="text-red-500 mt-1 text-sm">{errors.nombre}</Typography>}
           </div>
           <div>
             <Select
-              label="Categoría"
+              label="Categoría de Insumo"
               name="id_categoria"
               value={selectedInsumo.id_categoria}
               onChange={(e) => setSelectedInsumo({ ...selectedInsumo, id_categoria: e })}
               required
-              error={errors.id_categoria}
+              
               className="rounded-lg border-gray-300"
             >
               {categorias.filter(categoria => categoria.estado).map((categoria) => (
@@ -516,7 +547,7 @@ export function Insumos() {
               value={selectedInsumo.unidad_medida}
               onChange={(e) => setSelectedInsumo({ ...selectedInsumo, unidad_medida: e })}
               required
-              error={errors.unidad_medida}
+              
               className="rounded-lg border-gray-300"
             >
               <Option value="Gramos">Gramos</Option>
