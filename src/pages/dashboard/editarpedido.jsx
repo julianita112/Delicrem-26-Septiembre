@@ -23,25 +23,25 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
     fecha_entrega: "",
     fecha_pago: "",
     id_estado: 7,  // Estado inicial: Esperando Pago
-    detallesPedido: [], // Aseguramos que siempre sea un array
+    detallesPedido: [],
     clientesh: { nombre: "", contacto: "" },
-    total: 0 // Agregar total al estado
+    total: 0
   });
 
-  const [ventas, setVentas] = useState([]); // Estado para almacenar las ventas
-  const [loadingVentas, setLoadingVentas] = useState(true); // Estado de carga para ventas
-  const [clienteNombre, setClienteNombre] = useState(""); // Para almacenar el nombre del cliente
+  const [ventas, setVentas] = useState([]);
+  const [loadingVentas, setLoadingVentas] = useState(true);
+  const [clienteNombre, setClienteNombre] = useState("");
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     const fetchVentas = async () => {
       try {
         const response = await axios.get("http://localhost:3000/api/ventas");
-        setVentas(response.data); // Actualiza el estado con las ventas obtenidas
-        setLoadingVentas(false); // Termina la carga
+        setVentas(response.data);
+        setLoadingVentas(false);
       } catch (error) {
         console.error("Error fetching ventas:", error);
-        setLoadingVentas(false); // Termina la carga incluso si hay error
+        setLoadingVentas(false);
       }
     };
 
@@ -55,7 +55,7 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
           icon: 'warning',
           confirmButtonText: 'Aceptar'
         }).then(() => {
-          onCancel(); // Regresar a la vista anterior si no es estado 7
+          onCancel();
         });
         return;
       }
@@ -68,23 +68,21 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
         return { ...detalle, precio_unitario: precioUnitario, subtotal };
       });
 
-      // Obtener el nombre del cliente
       const cliente = clientes.find(cliente => cliente.id_cliente === pedido.id_cliente);
       setClienteNombre(cliente ? cliente.nombre : "");
 
-      setSelectedPedido({
+      setSelectedPedido(prevState => ({
         ...pedido,
-        fecha_entrega: formatDate(pedido.fecha_entrega), // Formatear la fecha de entrega
-        fecha_pago: formatDate(pedido.fecha_pago), // Formatear la fecha de pago si existe
-        detallesPedido: detallesConSubtotal, // Añadir los subtotales
-        id_estado: pedido.id_estado,  // Cargar el estado actual del pedido
+        fecha_entrega: formatDate(pedido.fecha_entrega),
+        fecha_pago: formatDate(pedido.fecha_pago),
+        detallesPedido: detallesConSubtotal,
+        id_estado: pedido.id_estado,
         clientesh: pedido.clientesh || { nombre: "", contacto: "" },
-        total: calcularTotal(detallesConSubtotal) // Calcular el total al cargar el pedido
-      });
+        total: calcularTotal(detallesConSubtotal)
+      }));
     }
   }, [pedido, productos, clientes, onCancel]);
 
-  // Función para calcular el total del pedido basado en los detalles
   const calcularTotal = (detalles) => {
     return detalles.reduce((acc, detalle) => acc + (detalle.subtotal || 0), 0);
   };
@@ -101,8 +99,8 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
     if (name === 'id_producto') {
       const productoSeleccionado = productos.find(p => p.id_producto === parseInt(value));
       if (productoSeleccionado) {
-        detalles[index].precio_unitario = productoSeleccionado.precio; // Establecer el precio unitario basado en el producto seleccionado
-        detalles[index].subtotal = detalles[index].cantidad * productoSeleccionado.precio; // Calcular el subtotal
+        detalles[index].precio_unitario = productoSeleccionado.precio;
+        detalles[index].subtotal = detalles[index].cantidad * productoSeleccionado.precio;
       }
     }
 
@@ -118,12 +116,38 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
     updateTotal(detalles);
   };
 
+  const hasDuplicateProductos = () => {
+    const productos = selectedPedido.detallesPedido.map(detalle => detalle.idProducto);
+    return new Set(productos).size !== productos.length;
+  };
+  
+  
   const handleAddDetalle = () => {
+    // Verificar si hay campos vacíos
+    const hasEmptyFields = selectedPedido.detallesPedido.some(detalle => 
+      !detalle.id_producto || !detalle.cantidad
+    );
+  
+    if (hasEmptyFields) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Por favor, completa todos los campos antes de agregar un nuevo detalle.',
+      });
+      return;
+    }
+  
+    
+  
+    // Si todo está bien, agrega un nuevo detalle
     setSelectedPedido({
       ...selectedPedido,
-      detallesPedido: [...selectedPedido.detallesPedido, { id_producto: "", cantidad: "", precio_unitario: "", subtotal: 0 }]
+      detallesPedido: [
+        ...selectedPedido.detallesPedido,
+        { id_producto: "", cantidad: "", precio_unitario: "", subtotal: 0 }
+      ]
     });
   };
+  
 
   const handleRemoveDetalle = (index) => {
     const detalles = [...selectedPedido.detallesPedido];
@@ -140,37 +164,94 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
     }));
   };
 
-  const handleSave = async () => {
-    // Validaciones previas
+  // Nueva función de validación en tiempo real
+  const validateRealTime = () => {
     const newErrors = {};
+    
+    // Validación de fecha de entrega
     if (!selectedPedido.fecha_entrega) {
       newErrors.fecha_entrega = "La fecha de entrega es obligatoria";
+    } else if (new Date(selectedPedido.fecha_entrega) < new Date()) {
+      newErrors.fecha_entrega = "La fecha de entrega debe ser a futuro";
     }
+  
+    // Validación de fecha de pago
+    if (selectedPedido.fecha_pago && new Date(selectedPedido.fecha_pago) > new Date()) {
+      newErrors.fecha_pago = "La fecha de pago no puede ser en el futuro";
+    }
+
+    // Validación de detalles
     if (selectedPedido.detallesPedido.length === 0) {
       newErrors.detallesPedido = "Debe agregar al menos un detalle de pedido";
     }
+
     selectedPedido.detallesPedido.forEach((detalle, index) => {
       if (!detalle.id_producto) {
         newErrors[`producto_${index}`] = "El producto es obligatorio";
       }
-      if (!detalle.cantidad) {
-        newErrors[`cantidad_${index}`] = "La cantidad es obligatoria";
+      if (!detalle.cantidad || isNaN(detalle.cantidad) || detalle.cantidad <= 0) {
+        newErrors[`cantidad_${index}`] = "La cantidad debe ser un número positivo";
+      }
+      if (!detalle.precio_unitario || isNaN(detalle.precio_unitario) || detalle.precio_unitario <= 0) {
+        newErrors[`precio_unitario_${index}`] = "El precio unitario debe ser un número positivo";
       }
     });
 
+    setErrors(newErrors); // Actualiza los errores en el estado
+  };
+
+  // useEffect para validar en tiempo real
+  useEffect(() => {
+    validateRealTime();
+  }, [selectedPedido]);
+
+  const handleSave = async () => {
+    // Validaciones previas
+    const newErrors = {};
+    const today = new Date(); // Obtener la fecha actual
+  
+    if (!selectedPedido.fecha_entrega) {
+      newErrors.fecha_entrega = "La fecha de entrega es obligatoria";
+    } else if (new Date(selectedPedido.fecha_entrega) < today) {
+      newErrors.fecha_entrega = "La fecha de entrega no puede ser en el pasado";
+    }
+  
+    if (selectedPedido.fecha_pago && new Date(selectedPedido.fecha_pago) > today) {
+      newErrors.fecha_pago = "La fecha de pago no puede ser en el futuro";
+    }
+  
+    if (selectedPedido.detallesPedido.length === 0) {
+      newErrors.detallesPedido = "Debe agregar al menos un detalle de pedido";
+    }
+  
+    selectedPedido.detallesPedido.forEach((detalle, index) => {
+      if (!detalle.id_producto) {
+        newErrors[`producto_${index}`] = "El producto es obligatorio";
+      }
+      if (!detalle.cantidad || isNaN(detalle.cantidad) || detalle.cantidad <= 0) {
+        newErrors[`cantidad_${index}`] = "La cantidad debe ser un número positivo";
+      }
+      if (!detalle.precio_unitario || isNaN(detalle.precio_unitario) || detalle.precio_unitario <= 0) {
+        newErrors[`precio_unitario_${index}`] = "El precio unitario debe ser un número positivo";
+      }
+    });
+  
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       Swal.fire({
-        title: 'Error',
-        text: 'Por favor, complete todos los campos requeridos.',
+        toast: true,
+        position: 'top-end',
         icon: 'error',
+        title: 'Por favor, complete todos los campos requeridos correctamente.',
+        showConfirmButton: false,
+        timer: 3000,
       });
       return;
     }
-
+  
     // Nueva lógica para verificar si la cantidad total de productos vendidos en la fecha excede el límite
     const fechaEntrega = selectedPedido.fecha_entrega;
-
+  
     // Calcular la cantidad total de productos vendidos para la fecha de entrega seleccionada
     const cantidadTotalVendidaEnFecha = ventas
       .filter(venta => venta.fecha_entrega.split('T')[0] === fechaEntrega) // Filtra ventas por fecha de entrega
@@ -178,13 +259,13 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
         // Suma la cantidad de cada detalle de venta
         return acc + venta.detalles.reduce((sum, detalle) => sum + detalle.cantidad, 0);
       }, 0);
-
+  
     // Calcular la cantidad de la nueva compra (pedido)
     const cantidadNuevaCompra = selectedPedido.detallesPedido.reduce((acc, detalle) => acc + parseInt(detalle.cantidad), 0);
-
+  
     const cantidadTotalFinal = cantidadTotalVendidaEnFecha + cantidadNuevaCompra;
     const disponibilidadRestante = 2000 - cantidadTotalVendidaEnFecha;
-
+  
     // Si supera el límite, mostrar alerta
     if (cantidadTotalFinal > 2000) {
       Swal.fire({
@@ -194,7 +275,7 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
       });
       return;
     }
-
+  
     const pedidoToSave = {
       fecha_entrega: new Date(selectedPedido.fecha_entrega).toISOString(),
       fecha_pago: selectedPedido.fecha_pago ? new Date(selectedPedido.fecha_pago).toISOString() : null,
@@ -207,163 +288,235 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
       })),
       total: selectedPedido.total // Incluyendo el total
     };
-
+  
+    
+  
     try {
       await axios.put(`http://localhost:3000/api/pedidos/${selectedPedido.id_pedido}`, pedidoToSave);
       Swal.fire({
-        title: '¡Actualización exitosa!',
-        text: 'El pedido ha sido actualizado correctamente.',
-        icon: 'success',
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'El pedido ha sido actualizado correctamente.',
+          showConfirmButton: false,
+          timer: 3000,
       });
       fetchPedidos(); // Actualizar la lista de pedidos
       onCancel(); // Regresar a la lista de pedidos
-    } catch (error) {
+  } catch (error) {
       console.error("Error updating pedido:", error);
       Swal.fire({
-        title: 'Error',
-        text: 'Hubo un problema al actualizar el pedido.',
-        icon: 'error',
+          toast: true,
+          position: 'top-end',
+          icon: 'error',
+          title: 'Hubo un problema al actualizar el pedido.',
+          showConfirmButton: false,
+          timer: 3000,
       });
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
-      <Typography className="text-black p-2 text-lg mb-4">Editar Pedido</Typography>
-      <div className="flex flex-col gap-4">
-        {/* Mostrar el nombre del cliente */}
-        <div className="w-full max-w-xs">
-          <Input
-            label="Cliente"
-            name="cliente_nombre"
-            type="text"
-            value={clienteNombre}
-            className="w-full"
-            disabled
-          />
-        </div>
-        <div className="w-full max-w-xs">
-          <Input
-            label="Número de Pedido"
-            name="numero_pedido"
-            type="text"
-            value={selectedPedido.numero_pedido}
-            className="w-full"
-            disabled
-          />
-        </div>
-        <div className="w-full max-w-xs">
-          <Input
-            label="Fecha de Entrega"
-            name="fecha_entrega"
-            type="date"
-            value={selectedPedido.fecha_entrega}
-            onChange={handleChange}
-            className="w-full"
-            required
-          />
-        </div>
-        <div className="w-full max-w-xs">
-          <Input
-            label="Fecha de Pago"
-            name="fecha_pago"
-            type="date"
-            value={selectedPedido.fecha_pago ? selectedPedido.fecha_pago : ""}
-            onChange={handleChange}
-            className="w-full"
-          />
-        </div>
-
-        {/* Select para cambiar el estado a "Pagado" */}
-        <div className="w-full max-w-xs">
-          <Select
-            label="Estado del Pedido"
-            name="id_estado"
-            value={selectedPedido.id_estado}
-            onChange={(e) => setSelectedPedido({ ...selectedPedido, id_estado: parseInt(e) })}
-            className="w-full"
+    <div className="flex-1 flex flex-col gap-4">
+     <div className="flex gap-4 mb-4">
+        <div className="flex flex-col gap-4 w-1/2 pr-4 bg-white rounded-lg shadow-sm p-4">
+          <div
+            style={{
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              color: '#000000',
+              marginBottom: '0.5rem',
+            }}
           >
-            <Option value={7}>Esperando Pago</Option>
-            <Option value={6}>Pagado</Option>
-          </Select>
-        </div>
+            Editar Pedido
+          </div>
+        {/* Columna izquierda */}
+        <div className="flex-1 flex flex-col gap-4">
+          {/* Mostrar el nombre del cliente */}
+          <div className="w-full max-w-xs">
+          <label className="block text-sm font-medium text-gray-700">Cliente:</label>
+            <Input
+              
+              name="cliente_nombre"
+              type="text"
+              value={clienteNombre}
+              className="w-full "
+              disabled
+            />
+          </div>
+  
+          <div className="w-full max-w-xs">
+          <label className="block text-sm font-medium text-gray-700">Nro. Pedido:</label>
+            <Input
+             
+              name="numero_pedido"
+              type="text"
+              value={selectedPedido.numero_pedido}
+              className="w-full text-xs"
+              disabled
+            />
+          </div>
+  
+          <div className="w-full max-w-xs">
+            <label className="block text-sm font-medium text-gray-700">Fecha de Entrega:</label>
+            <Input
+              name="fecha_entrega"
+              type="date"
+              value={selectedPedido.fecha_entrega}
+              onChange={handleChange}
+              className="w-full text-xs"
+              required
+            />
+            {errors.fecha_entrega && (
+              <p className="text-red-500 text-xs mt-1">{errors.fecha_entrega}</p>
+            )}
+          </div>
+  
+          <div className="w-full max-w-xs">
+    <label className="block text-sm font-medium text-gray-700">Fecha de Pago:</label>
+    <Input
+        name="fecha_pago"
+        type="date"
+        value={selectedPedido.fecha_pago || ""}
+        onChange={handleChange}
+        className="w-full text-xs"
+    />
+    {errors.fecha_pago && (
+        <p className="text-red-500 text-xs mt-1">{errors.fecha_pago}</p>
+    )}
+</div>
 
-        <Typography variant="h6" color="black" className="text-ms">
-          Agregar Productos
-        </Typography>
-
-        <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col gap-2">
-          {selectedPedido.detallesPedido.map((detalle, index) => (
-            <div key={index} className="relative flex flex-col gap-2 mb-4">
-              <div className="flex flex-col gap-2">
-                <Select
-                  label="Producto"
-                  required
-                  name="id_producto"
-                  value={detalle.id_producto}
-                  onChange={(e) => handleDetalleChange(index, { target: { name: 'id_producto', value: e } })}
-                  className="w-full"
-                >
-                  {productos.map(producto => (
-                    <Option key={producto.id_producto} value={producto.id_producto}>
-                      {producto.nombre}
-                    </Option>
-                  ))}
-                </Select>
-                <Input
-                  label="Cantidad"
-                  name="cantidad"
-                  type="number"
-                  required
-                  value={detalle.cantidad}
-                  onChange={(e) => handleDetalleChange(index, e)}
-                  className="w-full"
-                />
-                <Input
-                  label="Precio Unitario"
-                  name="precio_unitario"
-                  type="number"
-                  step="0.01"
-                  value={detalle.precio_unitario}
-                  className="w-full"
-                  readOnly
-                />
-                <Input
-                  label="Subtotal"
-                  name="subtotal"
-                  type="number"
-                  step="0.01"
-                  value={detalle.subtotal}
-                  className="w-full"
-                  readOnly
-                />
-                <div className="flex justify-end">
-                  <IconButton
-                    color="red"
-                    onClick={() => handleRemoveDetalle(index)}
-                    className="btncancelarm"
-                    size="sm"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </IconButton>
-                </div>
-              </div>
-            </div>
-          ))}
-          <div className="mt-2 flex justify-end">
-            <Button className="btnmas" size="sm" onClick={handleAddDetalle}>
-              <PlusIcon className="h-4 w-4 mr-1" />
-            </Button>
+        
+  
+          {/* Select para cambiar el estado a "Pagado" */}
+          <div className="w-full max-w-xs">
+            <Select
+              label="Estado del Pedido"
+              name="id_estado"
+              value={selectedPedido.id_estado}
+              onChange={(e) => setSelectedPedido({ ...selectedPedido, id_estado: parseInt(e) })}
+              className="w-full"
+            >
+              <Option value={7}>Esperando Pago</Option>
+              <Option value={6}>Pagado</Option>
+            </Select>
           </div>
         </div>
-
-        <div className="flex justify-end mt-4">
-          <Typography variant="h6" color="black">
-            Total: ${selectedPedido.total.toFixed(2)}
+    </div>
+        {/* Columna derecha */}
+        <div className="mt-6 text-center w-1/2 flex flex-col gap-4">
+          <Typography variant="h6" color="blue-gray" className="font-semibold mb-4">
+            Detalles del Pedido
           </Typography>
-        </div>
-      </div>
+  
+        
+            {selectedPedido.detallesPedido.map((detalle, index) => (
+              <div key={index} className="flex flex-col gap-4 mb-1 p-4 bg-gray-50 rounded-md shadow-sm border border-gray-200">
+              <div className="flex flex-col md:flex-row gap-4">
+{/* Producto y Cantidad en la misma fila */}
+              <div className="flex flex-col md:w-1/2 gap-2">
+              <label className="block text-sm font-medium text-gray-700">Producto:</label>
+                  <Select          
+                    required
+                    name="id_producto"
+                    value={detalle.id_producto}
+                    onChange={(e) => handleDetalleChange(index, { target: { name: 'id_producto', value: e } })}
+                   className="w-full p-2 border border-gray-300 rounded-md text-sm focus:border-blue-500 focus:ring-0"
+                  >
+                    {productos.map(producto => (
+                      <Option key={producto.id_producto} value={producto.id_producto}>
+                        {producto.nombre}
+                      </Option>
+                    ))}
+                  </Select>
+                  {errors[`producto_${index}`] && (
+                    <p className="text-red-500 text-xs mt-1">{errors[`producto_${index}`]}</p>
+                  )}
+                </div>
+  
+                <div className="flex flex-col md:w-1/2 gap-2">
+                  <label className="block text-sm font-medium text-gray-700">Cantidad:</label>
+                  <Input
+                    name="cantidad"
+                    type="number"
+                    required
+                    value={detalle.cantidad}
+                    onChange={(e) => handleDetalleChange(index, e)}
+                     className="w-full p-2 border border-gray-300 rounded-md text-sm focus:border-blue-500 focus:ring-0"
+                  />
+                   {errors[`cantidad_${index}`] && (
+                    <p className="text-red-500 text-xs mt-1">{errors[`cantidad_${index}`]}</p>
+                  )}
+                   </div>
+                   </div>
+  
+                  {/* Precio Unitario y Subtotal en la misma fila */}
+              <div className="flex flex-col md:flex-row gap-4 mt-4">
+                <div className="flex flex-col md:w-1/2 gap-2">
+                  <label className="block text-sm font-medium text-gray-700">Precio Unitario:</label>
+                  <Input
+                    label="Precio Unitario"
+                    name="precio_unitario"
+                    type="number"
+                    step="0.01"
+                    value={detalle.precio_unitario}
+                    className="w-full"
+                    readOnly
+                  />
+    </div>
 
+    <div className="flex flex-col md:w-1/2 gap-2">
+                  <label className="block text-sm font-medium text-gray-700">Subtotal:</label>
+                  <input
+                    name="subtotal"
+                    type="number"
+                    step="0.01"
+                    value={detalle.subtotal}
+                     className="w-full p-2 bg-gray-100 border border-gray-300 rounded-md text-sm"
+                    readOnly
+                  />
+   </div>
+   </div>
+
+   <div className="flex justify-end mt-2">
+                    <IconButton
+                      color="red"
+                      onClick={() => handleRemoveDetalle(index)}
+                      className="mt-4"
+                      size="sm"
+                    >
+                     <TrashIcon className="h-5 w-5" />
+                    </IconButton>
+                  </div>
+                </div>
+              
+            ))}
+             {errors.detallesPedido && (
+            <p className="text-red-500 text-xs mb-4">{errors.detallesPedido}</p>
+          )}
+
+   {/* Botón para agregar detalle */}
+           <div className="flex items-center mt-4">
+            <Button
+              size="sm"
+              onClick={handleAddDetalle}
+              className="flex items-center gap-2 bg-black text-white hover:bg-pink-800 px-4 py-2 rounded-md"
+            >
+              <PlusIcon className="h-5 w-5" />
+              <span className="sr-only">Agregar Detalle</span>
+            </Button>
+
+          </div>
+
+      <div className="flex justify-end mt-4">
+            <Typography variant="h6" color="blue-gray">
+              Total de la Compra: ${(selectedPedido.total || 0).toFixed(2)}
+            </Typography>
+          </div>
+          </div>
+          </div>
+    
+  
       <div className="flex justify-end gap-2 mt-4">
         <Button variant="text" className="btncancelarm" size="sm" onClick={onCancel}>
           Cancelar

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Input,
@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { useAuth } from "@/context/authContext";
+import { debounce } from 'lodash';
 
 export function SignIn() {
   const [email, setEmail] = useState("");
@@ -18,6 +19,29 @@ export function SignIn() {
   const navigate = useNavigate();
   const { login, updatePermissions } = useAuth();
 
+  // Validar email en tiempo real
+  const validateEmail = debounce((value) => {
+    if (!value) {
+      setEmailError("El campo de correo electrónico es obligatorio.");
+    } else if (value.length < 4 || !value.includes("@")) {
+      setEmailError("Ingrese un correo electrónico válido.");
+    } else {
+      setEmailError(""); // Limpiar errores si es válido
+    }
+  }, 300);
+
+  // Validar contraseña en tiempo real
+  const validatePassword = debounce((value) => {
+    if (!value) {
+      setPasswordError("El campo de contraseña es obligatorio.");
+    } else if (value.length < 4) {
+      setPasswordError("La contraseña debe tener al menos 4 caracteres.");
+    } else {
+      setPasswordError(""); // Limpiar errores si es válida
+    }
+  }, 300);
+
+  // Función para manejar el envío del formulario
   const handleSignIn = async (e) => {
     e.preventDefault();
 
@@ -25,26 +49,12 @@ export function SignIn() {
     setEmailError("");
     setPasswordError("");
 
-    // Validaciones
-    let valid = true;
-    if (!email) {
-      setEmailError("El campo de correo electrónico es obligatorio.");
-      valid = false;
-    } else if (email.length < 4 || !email.includes("@")) {
-      setEmailError("Ingrese un correo electrónico válido.");
-      valid = false;
-    }
+    // Realizar la validación antes del envío
+    validateEmail(email);
+    validatePassword(password);
 
-    if (!password) {
-      setPasswordError("El campo de contraseña es obligatorio.");
-      valid = false;
-    } else if (password.length < 4) {
-      setPasswordError("La contraseña debe tener al menos 4 caracteres.");
-      valid = false;
-    }
-
-    if (!valid) {
-      return;
+    if (emailError || passwordError) {
+      return; // Evitar envío si hay errores
     }
 
     const Toast = Swal.mixin({
@@ -59,19 +69,14 @@ export function SignIn() {
       }
     });
 
-    console.log("Trying to log in with:", { email, password });
-
     try {
       const response = await axios.post("http://localhost:3000/api/usuarios/login", {
         email,
         password,
       });
 
-      console.log("Login response:", response);
-
       if (response.status === 200) {
         const { token } = response.data;
-
         localStorage.setItem("token", token);
 
         const userResponse = await axios.get("http://localhost:3000/api/usuarios", {
@@ -80,15 +85,7 @@ export function SignIn() {
           },
         });
 
-        console.log("User response:", userResponse);
-
         const user = userResponse.data.find(user => user.email === email);
-
-        if (!user) {
-          throw new Error("User data is undefined");
-        }
-
-        console.log("User data:", user);
 
         if (!user.estado) {
           Swal.fire({
@@ -99,43 +96,26 @@ export function SignIn() {
           return;
         }
 
-        try {
-          const roleResponse = await axios.get(`http://localhost:3000/api/roles/${user.id_rol}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          console.log("Role response:", roleResponse);
+        const roleResponse = await axios.get(`http://localhost:3000/api/roles/${user.id_rol}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-          const permisosRol = roleResponse.data.permisosRol;
+        const permisosRol = roleResponse.data.permisosRol;
+        login(user, permisosRol.map(permiso => permiso.nombre_permiso));
+        updatePermissions(permisosRol.map(permiso => permiso.nombre_permiso));
 
-          if (!permisosRol) {
-            throw new Error("Permissions data is undefined");
-          }
+        Toast.fire({
+          icon: "success",
+          title: "Acceso concedido."
+        });
 
-          console.log("User permissions:", permisosRol);
-
-          login(user, permisosRol.map(permiso => permiso.nombre_permiso));
-          updatePermissions(permisosRol.map(permiso => permiso.nombre_permiso));
-
-          Toast.fire({
-            icon: "success",
-            title: "Acceso concedido."
-          });
-
-          navigate("/dashboard/home");
-        } catch (roleError) {
-          console.error("Error fetching role:", roleError);
-          Toast.fire({
-            icon: "error",
-            title: "Error al obtener los permisos del rol."
-          });
-        }
+        navigate("/dashboard/home");
       } else {
         throw new Error("Credenciales inválidas");
       }
     } catch (err) {
-      console.error("Error during login:", err);
       Toast.fire({
         icon: "error",
         title: "Credenciales inválidas. Por favor, inténtelo de nuevo."
@@ -147,34 +127,34 @@ export function SignIn() {
     <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white py-12 px-4">
       <div className="flex flex-col lg:flex-row w-full max-w-4xl mx-auto">
         <div className="lg:w-1/2 p-6 bg-white rounded-lg shadow-lg">
-          <div className="text-center mb-6">
-            <img src="/img/delicremlogo.png" alt="Logo" className="mx-auto mb-4" style={{ width: '250px' }} />
-            <Typography variant="h4" className="text-gray-800 font-semibold mb-2">Iniciar Sesión</Typography>
-            <Typography variant="h6" className="text-gray-600">Ingrese su correo electrónico y contraseña para iniciar sesión.</Typography>
+          <div className="text-center mb-4 mt-16">
+            <Typography variant="h3" className="text-black font-semibold mb-6">Iniciar Sesión</Typography>
+            <Typography variant="h6" className="text-gray-600 mt-4">
+              Ingrese su correo electrónico y contraseña para iniciar sesión.
+            </Typography>
           </div>
           <Card className="shadow-none p-4">
             <form className="space-y-4" onSubmit={handleSignIn}>
               <div>
-                <Typography variant="small" color="blue-gray" className="block font-medium mb-1">
+                <Typography variant="small" color="black" className="block font-medium mb-1">
                   Email
                 </Typography>
                 <Input
                   size="md"
                   placeholder="usuario@gmail.com"
                   className={`w-full border-gray-300 rounded-lg focus:border-pink-200 focus:ring-1 transition duration-300 ${emailError ? 'border-red-500 animate-pulse' : ''}`}
-                  labelProps={{
-                    className: "before:content-none after:content-none",
-                  }}
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  error={!!emailError}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    validateEmail(e.target.value);
+                  }}
                 />
                 <Typography className={`text-red-500 text-sm transition-opacity duration-300 ease-in-out ${emailError ? 'opacity-100' : 'opacity-0'}`}>
                   {emailError}
                 </Typography>
               </div>
               <div>
-                <Typography variant="small" color="blue-gray" className="block font-medium mb-1">
+                <Typography variant="small" color="black" className="block font-medium mb-1">
                   Contraseña
                 </Typography>
                 <Input
@@ -182,12 +162,11 @@ export function SignIn() {
                   size="md"
                   placeholder="********"
                   className={`w-full border-gray-300 rounded-lg focus:border-pink-200 focus:ring-1 transition duration-300 ${passwordError ? 'border-red-500 animate-pulse' : ''}`}
-                  labelProps={{
-                    className: "before:content-none after:content-none",
-                  }}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  error={!!passwordError}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    validatePassword(e.target.value);
+                  }}
                 />
                 <Typography className={`text-red-500 text-sm transition-opacity duration-300 ease-in-out ${passwordError ? 'opacity-100' : 'opacity-0'}`}>
                   {passwordError}
@@ -204,9 +183,9 @@ export function SignIn() {
             </div>
           </Card>
         </div>
-        <div className="lg:w-1/2 hidden lg:block bg-gradient-to-br from-blue-100 to-blue-300 rounded-lg overflow-hidden">
+        <div className="lg:w-2/4 hidden lg:block bg-gradient-to-br from-blue-100 to-blue-300 rounded-lg overflow-hidden">
           <img
-            src="/img/imalogin.jpeg"
+            src="/img/delicrem4.jpg"
             className="h-full w-full object-cover rounded-lg"
             alt="Background"
           />

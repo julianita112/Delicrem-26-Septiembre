@@ -383,21 +383,31 @@ export function Pedidos() {
           )}
 
           {showForm === "anular" && ( // Mostrar diálogo para anular pedido
-            <Dialog open={true} handler={() => setShowForm("lista")} className="max-w-xs w-11/12 bg-white rounded-lg shadow-lg" size="xs">
-              <DialogHeader className="bg-gray-100 text-gray-800 p-3 rounded-t-lg border-b border-gray-300">
-                <Typography variant="h6" className="font-semibold">
-                  Motivo de Anulación
+            <Dialog open={true} handler={() => setShowForm("lista")} className="max-w-xs w-11/12 items-centerjustify-center z-50 bg-black bg-opacity-70 shadow-lg" size="xs">
+              <DialogHeader className="bg-white p-6   rounded-t-lg ">
+              <Typography variant="h5" className="font-semibold mb-4 text-righ">
+                  Motivo de Anulación del Pedido
                 </Typography>
               </DialogHeader>
 
-              <DialogBody divider className="p-4 bg-white">
-                <textarea
-                  placeholder="Escribe el motivo de anulación aquí..."
-                  value={motivoAnulacion}
-                  onChange={(e) => setMotivoAnulacion(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg mb-4 resize-none"
-                  required
-                />
+              <DialogBody divider className="bg-white p-6   ">
+              <textarea
+        label="Motivo de Anulación"
+        value={motivoAnulacion}
+        onChange={(e) => setMotivoAnulacion(e.target.value)}
+        type="text"
+         placeholder="Escribe el motivo de anulación aquí..."
+         className={`w-full p-4 border ${motivoAnulacion.length < 5 || motivoAnulacion.length > 30 ? 'border-red-500' : 'border-gray-300'} rounded-lg mb-4 resize-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none transition duration-200`}
+         rows={4}
+         required
+      />
+
+{motivoAnulacion.length < 5 && (
+        <p className="text-red-500 text-sm">El motivo debe tener al menos 5 letras.</p>
+      )}
+      {motivoAnulacion.length > 30 && (
+        <p className="text-red-500 text-sm">El motivo no puede tener más de 30 letras.</p>
+      )}
               </DialogBody>
 
               <div className="flex justify-end gap-2 p-3 bg-gray-100 rounded-b-lg border-t border-gray-300">
@@ -405,7 +415,12 @@ export function Pedidos() {
                   Cancelar
                 </Button>
 
-                <Button variant="gradient" className="btnagregarm" size="sm" onClick={handleCancelPedido}>
+                <Button
+                 variant="gradient" 
+                 className="btnagregarm bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition duration-200"
+          size="sm"
+          
+                 onClick={handleCancelPedido}>
                   Anular Pedido
                 </Button>
               </div>

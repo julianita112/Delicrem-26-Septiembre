@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { debounce } from 'lodash';
 import {
   Dialog,
@@ -35,6 +35,7 @@ const CrearUsuario = ({
   roles,
 }) => {
   const [formErrors, setFormErrors] = useState({});
+  const [duplicateErrors, setDuplicateErrors] = useState({}); // Estado para errores de duplicación
 
   useEffect(() => {
     if (!open) {
@@ -58,16 +59,6 @@ const CrearUsuario = ({
     });
   };
 
-  const checkExistenceInDB = async (field, value) => {
-    try {
-      const response = await axios.get(`http://localhost:3000/api/check-existence?field=${field}&value=${value}`);
-      return response.data.exists;
-    } catch (error) {
-      console.error(`Error checking ${field} existence:`, error);
-      return false;
-    }
-  };
-  
   const validateFields = async (user) => {
     const errors = {};
   
@@ -80,12 +71,7 @@ const CrearUsuario = ({
       errors.nombre = 'El nombre no debe exceder los 30 caracteres.';
     } else if (/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/.test(user.nombre)) {
       errors.nombre = 'El nombre no debe incluir caracteres especiales ni números.';
-    } else {
-      const exists = await checkExistenceInDB('nombre', user.nombre);
-      if (exists) {
-        errors.nombre = 'Este nombre ya está registrado en la base de datos.';
-      }
-    }
+    } 
   
     // Validación del email
     if (!user.email) {
@@ -100,12 +86,7 @@ const CrearUsuario = ({
       errors.email = 'El correo electrónico debe contener un símbolo @.';
     } else if (!/^[A-Za-z0-9.-]+\.[A-Z]{2,}$/i.test(user.email.split('@')[1])) {
       errors.email = 'El dominio del correo electrónico (después del @) debe tener un formato válido.';
-    } else {
-      const exists = await checkExistenceInDB('email', user.email);
-      if (exists) {
-        errors.email = 'Este correo electrónico ya está registrado en la base de datos.';
-      }
-    }
+    } 
   
     // Validación de la contraseña
     if (!editMode) {
@@ -130,12 +111,7 @@ const CrearUsuario = ({
   
     if (!user.numero_documento) {
       errors.numero_documento = "Debe ingresar un número de documento.";
-    } else {
-      const exists = await checkExistenceInDB('numero_documento', user.numero_documento);
-      if (exists) {
-        errors.numero_documento = 'Este número de documento ya está registrado en la base de datos.';
-      }
-    }
+    } 
   
     if (!user.genero) {
       errors.genero = "Debe seleccionar un género.";
@@ -147,12 +123,7 @@ const CrearUsuario = ({
   
     if (!user.telefono) {
       errors.telefono = "Debe ingresar un número de teléfono.";
-    } else {
-      const exists = await checkExistenceInDB('telefono', user.telefono);
-      if (exists) {
-        errors.telefono = 'Este número de teléfono ya está registrado en la base de datos.';
-      }
-    }
+    } 
   
     if (!user.direccion) {
       errors.direccion = "Debe ingresar una dirección.";
@@ -167,42 +138,59 @@ const CrearUsuario = ({
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
-  
+
+  const latestValueRef = useRef({}); // Referencia para almacenar el valor más reciente
+
   const handleChange = async (e) => {
-    const { name, value } = e.target;
-    const updatedUser = { ...selectedUser, [name]: value };
-    setSelectedUser(updatedUser);
+      const { name, value } = e.target;
+      const updatedUser = { ...selectedUser, [name]: value };
+      setSelectedUser(updatedUser);
+  
+      // Almacenar el último valor en la referencia
+      latestValueRef.current[name] = value;
+  
+      // Ejecutar la validación después de un breve período
+      await debounceValidate(updatedUser);
+  
+      // Validación en tiempo real para duplicados
+      if (["nombre", "email", "numero_documento", "telefono"].includes(name)) {
+          if (value.length > 0) {
+              // Guardar el valor localmente para compararlo después
+              const currentValue = latestValueRef.current[name];
+              const existingUser = await checkUserExists(name, value);
+  
+              // Verificar si el valor actual sigue siendo el mismo antes de actualizar errores
+              if (currentValue === value) {
+                  if (existingUser) {
+                      setFormErrors((prevErrors) => ({
+                          ...prevErrors,
+                          [name]: `${name.charAt(0).toUpperCase() + name.slice(1)} ya existe.`,
+                      }));
+                  } else {
+                      setFormErrors((prevErrors) => ({
+                          ...prevErrors,
+                          [name]: "",
+                      }));
+                  }
+              }
+          } else {
+              // Si el campo está vacío, limpia el error
+              setFormErrors((prevErrors) => ({
+                  ...prevErrors,
+                  [name]: "",
+              }));
+          }
+      }
+  };
+  
+// Función debounce para la validación
+const debounceValidate = debounce(async (user) => {
+    await validateFields(user);
+}, 400); // 300 ms de espera
 
-    // Validar en tiempo real
-    await validateFields(updatedUser);
 
-    // Validación en tiempo real para duplicados
-    if (name === "nombres" || name === "email" || name === "numero_documento" || name === "telefono") {
-        if (value.length > 0) {
-            const existingUser = await checkUserExists(name, value);
-            if (existingUser) {
-                setErrors((prevErrors) => ({
-                    ...prevErrors,
-                    [name]: `${name.charAt(0).toUpperCase() + name.slice(1)} ya existe.`
-                }));
-            } else {
-                setErrors((prevErrors) => ({
-                    ...prevErrors,
-                    [name]: ""
-                }));
-            }
-        } else {
-            // Si el campo está vacío, limpia el error
-            setErrors((prevErrors) => ({
-                ...prevErrors,
-                [name]: ""
-            }));
-        }
-    }
-};
-
-// Función para verificar si el usuario existe en la tabla principal
-const checkUserExists = async (field, value) => {
+  // Función para verificar si el usuario existe en la tabla principal
+  const checkUserExists = async (field, value) => {
     try {
         const response = await axios.get(`http://localhost:3000/api/usuarios`); // Consulta toda la tabla
         const userExists = response.data.some(user => user[field] === value); // Verifica si el valor ya existe
@@ -211,9 +199,8 @@ const checkUserExists = async (field, value) => {
         console.error("Error al verificar la existencia del usuario:", error);
         return false;
     }
-};
+  };
 
-  
   const handleSelectChange = async (name, value) => {
     const updatedUser = { ...selectedUser, [name]: value };
     setSelectedUser(updatedUser);
@@ -258,6 +245,7 @@ const checkUserExists = async (field, value) => {
       });
     }
   };
+
   return (
     <Dialog
       open={open}
@@ -275,7 +263,6 @@ const checkUserExists = async (field, value) => {
               name="nombre"
               value={selectedUser.nombre}
               onChange={handleChange}
-              
               required
             />
             {formErrors.nombre && <p className="text-red-500 text-xs mt-1">{formErrors.nombre}</p>}
@@ -287,7 +274,6 @@ const checkUserExists = async (field, value) => {
               name="email"
               value={selectedUser.email}
               onChange={handleChange}
-             
               required
             />
             {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
@@ -297,11 +283,10 @@ const checkUserExists = async (field, value) => {
             <div className="col-span-1">
               <Input
                 label="Contraseña"
-                type="password"
                 name="password"
+                type="password"
                 value={selectedUser.password}
                 onChange={handleChange}
-               
                 required
               />
               {formErrors.password && <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>}
@@ -309,7 +294,7 @@ const checkUserExists = async (field, value) => {
           )}
 
           <div className="col-span-1">
-            <Select
+          <Select
               label="Tipo de Documento"
               name="tipo_documento"
               value={selectedUser.tipo_documento}
@@ -330,14 +315,13 @@ const checkUserExists = async (field, value) => {
               name="numero_documento"
               value={selectedUser.numero_documento}
               onChange={handleChange}
-              error={!!formErrors.numero_documento}
               required
             />
             {formErrors.numero_documento && <p className="text-red-500 text-xs mt-1">{formErrors.numero_documento}</p>}
           </div>
 
           <div className="col-span-1">
-            <Select
+          <Select
               label="Género"
               name="genero"
               value={selectedUser.genero}
@@ -357,7 +341,6 @@ const checkUserExists = async (field, value) => {
               name="nacionalidad"
               value={selectedUser.nacionalidad}
               onChange={handleChange}
-              error={!!formErrors.nacionalidad}
               required
             />
             {formErrors.nacionalidad && <p className="text-red-500 text-xs mt-1">{formErrors.nacionalidad}</p>}
@@ -369,7 +352,6 @@ const checkUserExists = async (field, value) => {
               name="telefono"
               value={selectedUser.telefono}
               onChange={handleChange}
-              error={!!formErrors.telefono}
               required
             />
             {formErrors.telefono && <p className="text-red-500 text-xs mt-1">{formErrors.telefono}</p>}
@@ -381,19 +363,18 @@ const checkUserExists = async (field, value) => {
               name="direccion"
               value={selectedUser.direccion}
               onChange={handleChange}
-              error={!!formErrors.direccion}
               required
             />
             {formErrors.direccion && <p className="text-red-500 text-xs mt-1">{formErrors.direccion}</p>}
           </div>
 
           <div className="col-span-1">
-            <Select
+          <Select
               label="Rol"
               name="id_rol"
               value={String(selectedUser.id_rol)}
               onChange={(value) => handleSelectChange("id_rol", value)}
-              required
+             
             >
               {roles.map((role) => (
                 <Option key={role.id_rol} value={String(role.id_rol)}>
@@ -405,17 +386,20 @@ const checkUserExists = async (field, value) => {
           </div>
         </div>
       </DialogBody>
-      <DialogFooter className="bg-white border-t border-gray-200 p-4 rounded-b-lg">
+      <DialogFooter className="p-4">
         <Button
-          color="red"
-          onClick={() => handleOpen()}  // Aquí se debería cerrar el modal y resetear el formulario
-          className="btncancelarm" size="sm"
+          className="btncancelarm" size="sm" color="red"
+          onClick={handleOpen}
+          variant="outlined"
         >
           Cancelar
         </Button>
-        <Button onClick={handleSave} className="btnagregarm" size="sm"
+        <Button
+          className="btnagregarm" size="sm"
+          onClick={handleSave}
+          
         >
-         {editMode ? "Guardar Cambios" : "Crear Usuario"}
+          {editMode ? "Actualizar" : "Crear Usuario"}
         </Button>
       </DialogFooter>
     </Dialog>

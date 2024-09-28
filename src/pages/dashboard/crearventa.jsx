@@ -24,6 +24,19 @@ export function CrearVenta({ clientes, productos, fetchVentas, onCancel }) {
     subtotal: 0 // Inicializar subtotal
   });
 
+
+  const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+      toast.addEventListener('mouseenter', Swal.stopTimer);
+      toast.addEventListener('mouseleave', Swal.resumeTimer);
+    }
+  });
+  
   const [errors, setErrors] = useState({});
   const [pedidos, setPedidos] = useState([]); // Estado para almacenar los pedidos
   const [loadingPedidos, setLoadingPedidos] = useState(true); // Estado de carga
@@ -119,15 +132,22 @@ export function CrearVenta({ clientes, productos, fetchVentas, onCancel }) {
 
   const handleSave = async () => {
     const newErrors = {};
+    const today = new Date().toISOString().split("T")[0]; // Obtiene la fecha actual en formato 'YYYY-MM-DD'
+  
     if (!selectedVenta.id_cliente) {
       newErrors.id_cliente = "El cliente es obligatorio";
     }
+  
     if (!selectedVenta.fecha_venta) {
       newErrors.fecha_venta = "La fecha de venta es obligatoria";
+    } else if (selectedVenta.fecha_venta !== today) {
+      newErrors.fecha_venta = "La fecha de venta debe ser hoy.";
     }
+  
     if (selectedVenta.detalleVentas.length === 0) {
       newErrors.detalleVentas = "Debe agregar al menos un detalle de venta";
     }
+  
     selectedVenta.detalleVentas.forEach((detalle, index) => {
       if (!detalle.id_producto) {
         newErrors[`producto_${index}`] = "El producto es obligatorio";
@@ -139,13 +159,15 @@ export function CrearVenta({ clientes, productos, fetchVentas, onCancel }) {
   
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      Swal.fire({
-        title: "Error",
-        text: "Por favor, complete todos los campos requeridos.",
+      Toast.fire({
         icon: "error",
+        title: "Por favor, complete todos los campos requeridos.",
       });
       return;
     }
+  
+    // Si no hay errores, procedes con el guardado.
+  
   
     // Nueva lógica para verificar si la cantidad total de productos vendidos en la fecha supera el límite
     const fechaEntrega = selectedVenta.fecha_entrega;

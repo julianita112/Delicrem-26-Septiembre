@@ -298,9 +298,15 @@ export function OrdenesProduccion() {
                 className="mb-20"
               />
               <div className="mb-3">
-                <Typography variant="h5" color="blue-gray" className="mb-4">
-                  Lista de Órdenes de Producción
-                </Typography>
+              <Typography
+  variant="h5"
+  color="blue-gray"
+  className="mb-4"
+  style={{ paddingTop: '15px' }} // Ajusta el valor según necesites
+>
+  Lista de Órdenes de Producción
+</Typography>
+
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -314,10 +320,10 @@ export function OrdenesProduccion() {
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Productos
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-20 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Estado
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th scope="col" className="px-20 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Acciones
                         </th>
                       </tr>
@@ -487,29 +493,53 @@ export function OrdenesProduccion() {
         </DialogFooter>
       </Dialog>
 
-      {/* Modal de anulación */}
-      <Dialog open={showAnulacionDialog} handler={() => setShowAnulacionDialog(false)} className="max-w-xs w-11/12 bg-white rounded-lg shadow-lg" size="xs">
-        <DialogHeader className="text-xl font-bold text-gray-800">
-          Anular Orden de Producción
-        </DialogHeader>
-        <DialogBody>
-          <Input
-            label="Motivo de Anulación"
-            value={motivoAnulacion}
-            onChange={(e) => setMotivoAnulacion(e.target.value)}
-            type="text"
-            placeholder="Ingresa el motivo"
-          />
-        </DialogBody>
-        <DialogFooter className="flex justify-center">
-          <Button className="btncancelarm" size="sm" onClick={() => setShowAnulacionDialog(false)}>
-            Cancelar
-          </Button>
-          <Button className="btnanularm" size="sm" color="red" onClick={handleConfirmAnulacion}>
-            Anular Orden
-          </Button>
-        </DialogFooter>
-      </Dialog>
+     {/* Modal de anulación */}
+{showAnulacionDialog && (
+  <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-70">
+    <div className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full transition-transform transform scale-100 hover:scale-105">
+    <Typography variant="h5" className="font-semibold mb-4 text-righ">
+      Motivo de Anulación de la Orden de Producción
+      </Typography>
+      <textarea
+        label="Motivo de Anulación"
+        value={motivoAnulacion}
+        onChange={(e) => setMotivoAnulacion(e.target.value)}
+        type="text"
+         placeholder="Escribe el motivo de anulación aquí..."
+         className={`w-full p-4 border ${motivoAnulacion.length < 5 || motivoAnulacion.length > 30 ? 'border-red-500' : 'border-gray-300'} rounded-lg mb-4 resize-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none transition duration-200`}
+         rows={4}
+         required
+      />
+      
+      {motivoAnulacion.length < 5 && (
+        <p className="text-red-500 text-sm">El motivo debe tener al menos 5 letras.</p>
+      )}
+      {motivoAnulacion.length > 30 && (
+        <p className="text-red-500 text-sm">El motivo no puede tener más de 30 letras.</p>
+      )}
+      <div className="flex justify-end gap-3 mt-4">
+        <Button
+          variant="text"
+          className="btncancelarm text-white"
+          size="sm"
+          onClick={() => setShowAnulacionDialog(false)}
+        >
+          Cancelar
+        </Button>
+        <Button
+          variant="gradient"
+         className="btnagregarm bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg transition duration-200"
+          size="sm"
+          disabled={motivoAnulacion.length < 5 || motivoAnulacion.length > 30} // Deshabilitar el botón si no cumple la validación
+          onClick={handleConfirmAnulacion}
+        >
+          Anular Orden
+        </Button>
+      </div>
+    </div>
+  </div>
+)}
+
 
       {/* Incluir los componentes CrearProduccion y EditarProduccion con su estado de visibilidad */}
       <CrearProduccion open={showCrearProduccion} handleCreateProductionOpen={toggleCrearProduccion} refreshOrders={fetchOrdenes} />

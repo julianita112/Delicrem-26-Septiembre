@@ -59,6 +59,8 @@ export function CrearPedido({ clientes, productos, fetchPedidos, onCancel }) {
     }
     if (!selectedPedido.fecha_entrega) {
       newErrors.fecha_entrega = "La fecha de entrega es obligatoria";
+    } else if (new Date(selectedPedido.fecha_entrega) < new Date()) {
+      newErrors.fecha_entrega = "La fecha de entrega debe ser a futuro";
     }
     if (selectedPedido.detallesPedido.length === 0) {
       newErrors.detallesPedido = "Debe agregar al menos un detalle de pedido";
@@ -318,6 +320,8 @@ export function CrearPedido({ clientes, productos, fetchPedidos, onCancel }) {
           </div>
         </div>
 
+
+{/* Columna derecha */}
         <div className="mt-6 text-center w-1/2 flex flex-col gap-4">
           <Typography variant="h6" color="blue-gray" className="font-semibold mb-4">
             Detalles del Pedido
