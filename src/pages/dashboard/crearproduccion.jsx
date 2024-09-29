@@ -230,18 +230,22 @@ export function CrearProduccion({ open, handleCreateProductionOpen }) {
     </Typography>
     {ventasFiltradas.map((venta) => (
       <div key={venta.id_venta} className="mb-4">
-        <Checkbox
-          id={`venta-${venta.id_venta}`}
-          label={`Venta ${venta.numero_venta} - Cliente: ${venta.cliente.nombre} - Documento: ${venta.cliente.numero_documento}`}
-          onChange={(e) => handleVentaChange(venta.numero_venta, e.target.checked)}
-          checked={selectedVentas.includes(venta.numero_venta)}
-        />
-        <div style={{ fontWeight: 'bold', marginTop: '8px' }}>
-          <span>Fecha de Entrega:</span>
-          <br />
-          <span>{new Date(venta.fecha_entrega).toISOString().split('T')[0]}</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <Checkbox
+            id={`venta-${venta.id_venta}`}
+            label={`Venta ${venta.numero_venta} - Cliente: ${venta.cliente.nombre} - Documento: ${venta.cliente.numero_documento}`}
+            onChange={(e) => handleVentaChange(venta.numero_venta, e.target.checked)}
+            checked={selectedVentas.includes(venta.numero_venta)}
+          />
         </div>
+        <span className="ml-4 text-black" style={{ fontWeight: 'bold' }}>
+          Fecha de Entrega: {new Date(venta.fecha_entrega).toISOString().split('T')[0]}
+        </span>
       </div>
+    </div>
+    
+
     ))}
   </div>
 

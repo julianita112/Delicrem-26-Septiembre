@@ -270,8 +270,8 @@ export function Pedidos() {
                             <button
                               onClick={() => toggleActivo(pedido.id_pedido, pedido.id_estado)}
                               className={`${
-                                pedido.id_estado !== 5 ? 'bg-red-600 hover:bg-red-800' : 'bg-gray-400 cursor-not-allowed'
-                              } text-white rounded-sm px-1.5 py-0.5 transition h-7 w-16`}
+                                pedido.id_estado !== 5 ? 'bg-red-700 hover:bg-red-800' : 'bg-gray-400 cursor-not-allowed'
+                              } text-white rounded-sm px-1.5 py-0.5 transition h-7 w-16 normal-case`}
                               size="sm"
                               disabled={pedido.id_estado === 5} // Desactivar el botón si el pedido ya está anulado
                             >

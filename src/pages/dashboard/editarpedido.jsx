@@ -1,5 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import {
+  DialogBody,
+  DialogFooter,
   Button,
   Input,
   Select,
@@ -10,12 +13,10 @@ import {
 import { PlusIcon, TrashIcon } from "@heroicons/react/24/solid";
 import axios from "../../utils/axiosConfig";
 import Swal from 'sweetalert2';
-
 // Función para formatear la fecha en formato YYYY-MM-DD
 const formatDate = (isoDate) => {
   return isoDate ? new Date(isoDate).toISOString().substring(0, 10) : '';
 };
-
 export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedidos, onCancel }) {
   const [selectedPedido, setSelectedPedido] = useState({
     id_cliente: "",
@@ -27,12 +28,10 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
     clientesh: { nombre: "", contacto: "" },
     total: 0
   });
-
   const [ventas, setVentas] = useState([]);
   const [loadingVentas, setLoadingVentas] = useState(true);
   const [clienteNombre, setClienteNombre] = useState("");
   const [errors, setErrors] = useState({});
-
   useEffect(() => {
     const fetchVentas = async () => {
       try {
@@ -44,9 +43,7 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
         setLoadingVentas(false);
       }
     };
-
     fetchVentas();
-
     if (pedido) {
       if (pedido.id_estado !== 7) {
         Swal.fire({
@@ -59,7 +56,6 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
         });
         return;
       }
-
       const detallesConSubtotal = pedido.detallesPedido.map(detalle => {
         const producto = productos.find(p => p.id_producto === detalle.id_producto);
         const precioUnitario = producto ? producto.precio : 0;
@@ -67,10 +63,8 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
         const subtotal = cantidad * precioUnitario;
         return { ...detalle, precio_unitario: precioUnitario, subtotal };
       });
-
       const cliente = clientes.find(cliente => cliente.id_cliente === pedido.id_cliente);
       setClienteNombre(cliente ? cliente.nombre : "");
-
       setSelectedPedido(prevState => ({
         ...pedido,
         fecha_entrega: formatDate(pedido.fecha_entrega),
@@ -82,20 +76,16 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
       }));
     }
   }, [pedido, productos, clientes, onCancel]);
-
   const calcularTotal = (detalles) => {
     return detalles.reduce((acc, detalle) => acc + (detalle.subtotal || 0), 0);
   };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setSelectedPedido({ ...selectedPedido, [name]: value });
   };
-
   const handleDetalleChange = (index, e) => {
     const { name, value } = e.target;
     const detalles = [...selectedPedido.detallesPedido];
-
     if (name === 'id_producto') {
       const productoSeleccionado = productos.find(p => p.id_producto === parseInt(value));
       if (productoSeleccionado) {
@@ -103,19 +93,15 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
         detalles[index].subtotal = detalles[index].cantidad * productoSeleccionado.precio;
       }
     }
-
     detalles[index][name] = value;
-
     if (name === 'cantidad' || name === 'precio_unitario') {
       const cantidad = parseInt(detalles[index].cantidad) || 0;
       const precioUnitario = parseFloat(detalles[index].precio_unitario) || 0;
       detalles[index].subtotal = cantidad * precioUnitario;
     }
-
     setSelectedPedido({ ...selectedPedido, detallesPedido: detalles });
     updateTotal(detalles);
   };
-
   const hasDuplicateProductos = () => {
     const productos = selectedPedido.detallesPedido.map(detalle => detalle.idProducto);
     return new Set(productos).size !== productos.length;
@@ -148,14 +134,12 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
     });
   };
   
-
   const handleRemoveDetalle = (index) => {
     const detalles = [...selectedPedido.detallesPedido];
     detalles.splice(index, 1);
     setSelectedPedido({ ...selectedPedido, detallesPedido: detalles });
     updateTotal(detalles);
   };
-
   const updateTotal = (detalles) => {
     const total = calcularTotal(detalles);
     setSelectedPedido(prevState => ({
@@ -163,7 +147,6 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
       total
     }));
   };
-
   // Nueva función de validación en tiempo real
   const validateRealTime = () => {
     const newErrors = {};
@@ -179,12 +162,10 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
     if (selectedPedido.fecha_pago && new Date(selectedPedido.fecha_pago) > new Date()) {
       newErrors.fecha_pago = "La fecha de pago no puede ser en el futuro";
     }
-
     // Validación de detalles
     if (selectedPedido.detallesPedido.length === 0) {
       newErrors.detallesPedido = "Debe agregar al menos un detalle de pedido";
     }
-
     selectedPedido.detallesPedido.forEach((detalle, index) => {
       if (!detalle.id_producto) {
         newErrors[`producto_${index}`] = "El producto es obligatorio";
@@ -196,15 +177,12 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
         newErrors[`precio_unitario_${index}`] = "El precio unitario debe ser un número positivo";
       }
     });
-
     setErrors(newErrors); // Actualiza los errores en el estado
   };
-
   // useEffect para validar en tiempo real
   useEffect(() => {
     validateRealTime();
   }, [selectedPedido]);
-
   const handleSave = async () => {
     // Validaciones previas
     const newErrors = {};
@@ -315,11 +293,8 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
       });
     }
   };
-
   return (
-    <div className="flex-1 flex flex-col gap-4">
-     <div className="flex gap-4 mb-4">
-        <div className="flex flex-col gap-4 w-1/2 pr-4 bg-white rounded-lg shadow-sm p-4">
+    <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">     
           <div
             style={{
               fontSize: '1.5rem',
@@ -330,25 +305,25 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
           >
             Editar Pedido
           </div>
-        {/* Columna izquierda */}
-        <div className="flex-1 flex flex-col gap-4">
-          {/* Mostrar el nombre del cliente */}
-          <div className="w-full max-w-xs">
+   
+       
+          <DialogBody divider className="flex flex-col max-h-[100vh] overflow-hidden">
+     <div className="flex flex-col gap-4 w-full p-4 bg-white rounded-lg shadow-sm">
+  <div className="flex gap-4">
+  <div className="flex flex-col gap-2 w-1/2">
           <label className="block text-sm font-medium text-gray-700">Cliente:</label>
-            <Input
-              
+            <Input             
               name="cliente_nombre"
               type="text"
               value={clienteNombre}
-              className="w-full "
+               className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-0"
               disabled
             />
           </div>
   
-          <div className="w-full max-w-xs">
+            <div className="flex flex-col gap-2 w-1/2">
           <label className="block text-sm font-medium text-gray-700">Nro. Pedido:</label>
-            <Input
-             
+            <Input            
               name="numero_pedido"
               type="text"
               value={selectedPedido.numero_pedido}
@@ -356,8 +331,10 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
               disabled
             />
           </div>
+          </div>
   
-          <div className="w-full max-w-xs">
+          <div className="flex gap-4">
+          <div className="flex flex-col gap-2 w-1/2">
             <label className="block text-sm font-medium text-gray-700">Fecha de Entrega:</label>
             <Input
               name="fecha_entrega"
@@ -371,8 +348,10 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
               <p className="text-red-500 text-xs mt-1">{errors.fecha_entrega}</p>
             )}
           </div>
+         
   
-          <div className="w-full max-w-xs">
+         
+          <div className="flex flex-col gap-2 w-1/2">
     <label className="block text-sm font-medium text-gray-700">Fecha de Pago:</label>
     <Input
         name="fecha_pago"
@@ -384,44 +363,53 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
     {errors.fecha_pago && (
         <p className="text-red-500 text-xs mt-1">{errors.fecha_pago}</p>
     )}
-</div>
+</div> </div>
+
 
         
   
           {/* Select para cambiar el estado a "Pagado" */}
-          <div className="w-full max-w-xs">
+          <div className="flex flex-col gap-2 w-1/3">
+          <label className="block text-sm font-medium text-gray-700">Estado de Pago del Pedido:</label>
             <Select
-              label="Estado del Pedido"
+             
               name="id_estado"
               value={selectedPedido.id_estado}
               onChange={(e) => setSelectedPedido({ ...selectedPedido, id_estado: parseInt(e) })}
-              className="w-full"
+              className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-0"
             >
               <Option value={7}>Esperando Pago</Option>
               <Option value={6}>Pagado</Option>
             </Select>
           </div>
-        </div>
-    </div>
+      
+    
         {/* Columna derecha */}
-        <div className="mt-6 text-center w-1/2 flex flex-col gap-4">
-          <Typography variant="h6" color="blue-gray" className="font-semibold mb-4">
+        <div className="w-full p-4 bg-white rounded-lg shadow-lg">
+<Typography variant="h6" color="black" className="text-lg font-semibold mb-4">
             Detalles del Pedido
           </Typography>
   
-        
+          <div className="overflow-x-auto max-h-64">
+          <table className="min-w-full table-auto border-collapse">
+      <thead>
+        <tr className="bg-gray-100">
+          
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-gray-200">
             {selectedPedido.detallesPedido.map((detalle, index) => (
-              <div key={index} className="flex flex-col gap-4 mb-1 p-4 bg-gray-50 rounded-md shadow-sm border border-gray-200">
-              <div className="flex flex-col md:flex-row gap-4">
+              <tr key={index} className="flex flex-col md:flex-row items-start gap-4 mb-4 p-4 bg-white rounded-lg shadow-sm">
+                <td className="px-4 py-2">
 {/* Producto y Cantidad en la misma fila */}
-              <div className="flex flex-col md:w-1/2 gap-2">
+        
               <label className="block text-sm font-medium text-gray-700">Producto:</label>
                   <Select          
                     required
                     name="id_producto"
                     value={detalle.id_producto}
                     onChange={(e) => handleDetalleChange(index, { target: { name: 'id_producto', value: e } })}
-                   className="w-full p-2 border border-gray-300 rounded-md text-sm focus:border-blue-500 focus:ring-0"
+                    className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-0"
                   >
                     {productos.map(producto => (
                       <Option key={producto.id_producto} value={producto.id_producto}>
@@ -432,82 +420,86 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
                   {errors[`producto_${index}`] && (
                     <p className="text-red-500 text-xs mt-1">{errors[`producto_${index}`]}</p>
                   )}
-                </div>
+                 </td>
   
-                <div className="flex flex-col md:w-1/2 gap-2">
+                 <td className="px-4 py-2">
                   <label className="block text-sm font-medium text-gray-700">Cantidad:</label>
                   <Input
                     name="cantidad"
                     type="number"
                     required
                     value={detalle.cantidad}
-                    onChange={(e) => handleDetalleChange(index, e)}
-                     className="w-full p-2 border border-gray-300 rounded-md text-sm focus:border-blue-500 focus:ring-0"
+                    onChange={(e) => {
+                      // Validar que el valor no sea negativo
+                      const value = e.target.value;
+                      if (value >= 0) {
+                        handleDetalleChange(index, e); // Solo se actualiza si el valor es >= 0
+                      }}}
+                    className="text-sm w-24 p-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0"
                   />
                    {errors[`cantidad_${index}`] && (
                     <p className="text-red-500 text-xs mt-1">{errors[`cantidad_${index}`]}</p>
                   )}
-                   </div>
-                   </div>
+                   </td>
   
                   {/* Precio Unitario y Subtotal en la misma fila */}
-              <div className="flex flex-col md:flex-row gap-4 mt-4">
-                <div className="flex flex-col md:w-1/2 gap-2">
+                  <td className="px-4 py-2">
                   <label className="block text-sm font-medium text-gray-700">Precio Unitario:</label>
                   <Input
-                    label="Precio Unitario"
+                   
                     name="precio_unitario"
                     type="number"
                     step="0.01"
                     value={detalle.precio_unitario}
-                    className="w-full"
+                    c   className="w-full p-2 border border-gray-300 rounded-md text-sm focus:border-blue-500 focus:ring-0"
+                    style={{ width: '200px', padding: '10px' }} 
                     readOnly
                   />
-    </div>
-
-    <div className="flex flex-col md:w-1/2 gap-2">
+    </td>
+    <td className="-px-12 py-2">
                   <label className="block text-sm font-medium text-gray-700">Subtotal:</label>
                   <input
                     name="subtotal"
                     type="number"
                     step="0.01"
                     value={detalle.subtotal}
-                     className="w-full p-2 bg-gray-100 border border-gray-300 rounded-md text-sm"
+                    className="text-sm bg-gray-100 border border-gray-300 rounded-lg" // Elimina el ancho fijo
+                    style={{ width: '120px', padding: '10px' }} 
                     readOnly
                   />
-   </div>
-   </div>
-
-   <div className="flex justify-end mt-2">
-                    <IconButton
+                 </td>
+   {/* Botón de eliminar (Trash Icon) alineado a la derecha */}
+   <td className="px-4 py-2 text-righ">
+              <IconButton
                       color="red"
                       onClick={() => handleRemoveDetalle(index)}
-                      className="mt-4"
+                         className="btncancelarm"
                       size="sm"
                     >
-                     <TrashIcon className="h-5 w-5" />
-                    </IconButton>
-                  </div>
-                </div>
-              
+                      <TrashIcon className="h-5 w-5" />
+                </IconButton>
+                </td>
+                    </tr>
             ))}
              {errors.detallesPedido && (
             <p className="text-red-500 text-xs mb-4">{errors.detallesPedido}</p>
           )}
+</tbody>
+    </table>
+  </div>   
 
-   {/* Botón para agregar detalle */}
-           <div className="flex items-center mt-4">
-            <Button
-              size="sm"
+    {/* Botón para agregar detalle */}
+    <div className="flex justify-end mt-4">
+              <Button 
+              
+              size="sm" 
               onClick={handleAddDetalle}
               className="flex items-center gap-2 bg-black text-white hover:bg-pink-800 px-4 py-2 rounded-md"
-            >
-              <PlusIcon className="h-5 w-5" />
-              <span className="sr-only">Agregar Detalle</span>
-            </Button>
-
-          </div>
-
+              >
+                <PlusIcon className="h-5 w-5" />
+      Agregar Insumo
+    </Button>
+            </div>
       <div className="flex justify-end mt-4">
             <Typography variant="h6" color="blue-gray">
               Total de la Compra: ${(selectedPedido.total || 0).toFixed(2)}
@@ -515,6 +507,7 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
           </div>
           </div>
           </div>
+</DialogBody>
     
   
       <div className="flex justify-end gap-2 mt-4">

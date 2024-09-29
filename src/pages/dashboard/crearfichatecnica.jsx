@@ -211,165 +211,178 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
         Crear Ficha Técnica
       </div>
 
-      <DialogBody divider className="flex flex-row max-h-[100vh] overflow-hidden">
-        {/* Sección Izquierda */}
-        <div className="flex flex-col gap-4 w-1/2 pr-4 bg-white rounded-lg shadow-sm p-4">
-          <div className="flex flex-col gap-2">
-            <label className="block text-sm font-medium text-gray-700">Cargar Ficha Técnica Existente 'Opcional':</label>
-            <select
-              className="w-full max-w-[400px] p-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-0"
-              onChange={handleFichaChange}
-              value={fichaSeleccionada}
-            >
-              <option value="">Seleccione una ficha técnica</option>
-              {fichas.filter(ficha => ficha.estado).map(ficha => (
-                <option key={ficha.id_ficha} value={ficha.id_ficha}>
-                  {ficha.descripcion}
-                </option>
-              ))}
-            </select>
-          </div>
+      <DialogBody divider className="flex flex-col max-h-[100vh] overflow-hidden">
+  <div className="flex flex-col gap-4 w-full p-4 bg-white rounded-lg shadow-sm">
+  <div className="flex gap-4">
+  <div className="flex flex-col gap-2 w-1/2">
+    <label className="block text-sm font-medium text-black">Cargar Ficha Técnica Existente 'Opcional':</label>
+    <select
+      className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-0"
+      onChange={handleFichaChange}
+      value={fichaSeleccionada}
+    >
+      <option value="">Seleccione una ficha técnica</option>
+      {fichas.filter(ficha => ficha.estado).map(ficha => (
+        <option key={ficha.id_ficha} value={ficha.id_ficha}>
+          {ficha.descripcion}
+        </option>
+      ))}
+    </select>
+  </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="block text-sm font-medium text-gray-700">Producto:</label>
-            <select
-              className="w-full max-w-[400px] p-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-0"
-              name="id_producto"
-              required
-              value={selectedFicha.id_producto}
-              onChange={handleChange}
-            >
-              <option value="">Seleccione un producto</option>
-              {productos.filter(producto => producto.estado).map(producto => (
-                <option key={producto.id_producto} value={producto.id_producto}>
-                  {producto.nombre}
-                </option>
-              ))}
-            </select>
-            {errors.id_producto && <p className="text-red-500 text-xs mt-1">{errors.id_producto}</p>}
-          </div>
+  {/* Select para Producto */}
+  <div className="flex flex-col gap-2 w-1/2">
+    <label className="block text-sm font-medium text-black">Producto:</label>
+    <select
+      className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-0"
+      name="id_producto"
+      required
+      value={selectedFicha.id_producto}
+      onChange={handleChange}
+    >
+      <option value="">Seleccione un producto</option>
+      {productos.filter(producto => producto.estado).map(producto => (
+        <option key={producto.id_producto} value={producto.id_producto}>
+          {producto.nombre}
+        </option>
+      ))}
+    </select>
+    {errors.id_producto && <p className="text-red-500 text-xs mt-1">{errors.id_producto}</p>}
+  </div>
+</div>
 
-          <div className="flex flex-col gap-2">
-            <label className="block text-sm font-medium text-gray-700">Descripción de la ficha técnica:</label>
-            <Textarea
-              name="descripcion"
-              required
-              value={selectedFicha.descripcion}
-              onChange={handleChange}
-              rows={3}
-              className="text-sm w-full max-w-[400px] resize-none border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0"
-            />
-            {errors.descripcion && <p className="text-red-500 text-xs mt-1">{errors.descripcion}</p>}
-          </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="block text-sm font-medium text-gray-700">Descripción detallada de los insumos:</label>
-            <Textarea
-              name="insumos"
-              required
-              value={selectedFicha.insumos}
-              onChange={handleChange}
-              rows={3}
-              className="text-sm w-full max-w-[400px] resize-none border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0"
-            />
-            {errors.insumos && <p className="text-red-500 text-xs mt-1">{errors.insumos}</p>}
-          </div>
-        </div>
-
-        {/* Sección Derecha */}
-        <div className="flex flex-col gap-4 w-1/2 overflow-y-auto p-4 bg-white rounded-lg shadow-sm">
-          <Typography variant="h6" color="blue-gray" className="text-lg font-semibold">
-            Detalles de Insumos
-          </Typography>
-
-          <div className="flex flex-col gap-4">
-            {selectedFicha.detallesFichaTecnicat.map((detalle, index) => (
-              <div key={index} className="flex items-center gap-4 mb-4 p-4 bg-gray-100 rounded-lg shadow-sm">
-                <div className="flex flex-col w-2/3 gap-2">
-                  <label className="block text-sm font-medium text-gray-700">Insumo:</label>
-                  <select
-                    className="w-full max-w-[200px] p-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-0"
-                    name="id_insumo"
-                    value={detalle.id_insumo}
-                    required
-                    onChange={(e) => handleDetalleChange(index, e)}
-                  >
-                    <option value="">Seleccione un insumo</option>
-                    {insumos.filter(insumo => insumo.estado).map(insumo => (
-                      <option key={insumo.id_insumo} value={insumo.id_insumo}>
-                        {insumo.nombre}
-                      </option>
-                    ))}
-                  </select>
-                  {errors[`id_insumo_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`id_insumo_${index}`]}</p>}
-                </div>
-
-                <div className="flex flex-col w-1/3 gap-2">
-                  <label className="block text-sm font-medium text-gray-700">Cantidad:</label>
-                  <input
-                    name="cantidad"
-                    required
-                    type="number"
-                    value={detalle.cantidad}
-                    onChange={(e) => handleDetalleChange(index, e)}
-                    className="text-sm w-full max-w-[120px] border border-gray-300 focus:border-blue-500 focus:ring-0"
-                    style={{
-                      borderWidth: '1px',
-                      borderColor: '#d1d5db',
-                      borderStyle: 'solid',
-                      borderRadius: '8px',
-                      boxShadow: 'none',
-                      height: '2rem',
-                      padding: '0.5rem'
-                    }}
-                  />
-                  {errors[`cantidad_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`cantidad_${index}`]}</p>}
-                </div>       
-                <div className="flex items-center justify-center w-10">
-                  <IconButton
-                    color="red"
-                    onClick={() => handleRemoveDetalle(index)}
-                    size="sm"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </IconButton>
-                </div>
-              </div>
-            ))}
-           
-           <div className="flex items-center">
-              <Button
-                size="sm"
-                onClick={handleAddDetalle}
-                className="flex items-center gap-2 bg-black text-white hover:bg-pink-800 px-2 py-1 rounded-md"
-                style={{ width: 'auto' }}
-              >
-                <PlusIcon className="h-5 w-5" />
-                <span className="sr-only">Agregar Detalle</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </DialogBody>
-
-      <DialogFooter className="bg-white p-4 flex justify-end gap-4 border-t border-gray-200">
-        <Button
-          variant="text"
-          size="sm"
-          onClick={handleClose}
-          className="btncancelarm text-white"
-        >
-          Cancelar
-        </Button>
-        <Button
-          variant="gradient"
-          size="sm"
-          onClick={handleSave}
-          className="btnagregarm text-white"
-        >
-          Crear Ficha Técnica
-        </Button>
-      </DialogFooter>
+<div className="flex gap-4">
+<div className="flex flex-col gap-2 w-1/2">
+      <label className="block text-sm font-medium text-black">Descripción de la ficha técnica:</label>
+      <Textarea
+        name="descripcion"
+        required
+        value={selectedFicha.descripcion}
+        onChange={handleChange}
+        rows={2}
+        className="text-sm w-full max-w-[400px] resize-none border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0"
+      />
+      {errors.descripcion && <p className="text-red-500 text-xs mt-1">{errors.descripcion}</p>}
     </div>
+
+    <div className="flex flex-col gap-2 w-1/2">
+      <label className="block text-sm font-medium text-black">Descripción detallada de los insumos:</label>
+      <Textarea
+        name="insumos"
+        required
+        value={selectedFicha.insumos}
+        onChange={handleChange}
+        rows={2}
+        className="text-sm w-full max-w-[400px] resize-none border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0"
+      />
+      {errors.insumos && <p className="text-red-500 text-xs mt-1">{errors.insumos}</p>}
+    </div>
+  </div>
+  </div>
+
+ {/* Tabla de Detalles de Insumos con barra de desplazamiento y diseño estético */}
+<div className="w-full p-4 bg-white rounded-lg shadow-lg">
+  <Typography variant="h6" color="black" className="text-lg font-semibold mb-4">
+    Detalles de Insumos
+  </Typography>
+
+  <div className="overflow-x-auto max-h-64">
+    <table className="min-w-full table-auto border-collapse">
+      <thead>
+        <tr className="bg-gray-100">
+          <th className="px-40 py-2 text-left text-sm font-medium text-black border-b">Insumo</th>
+          <th className="px-6 py-2 text-left text-sm font-medium text-black border-b">Cantidad</th>
+          <th className="px-4 py-2 text-left text-sm font-medium text-black border-b">Acciones</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-gray-200">
+        {selectedFicha.detallesFichaTecnicat.map((detalle, index) => (
+          <tr key={index} className="bg-white hover:bg-gray-100 transition-colors">
+            <td className="px-4 py-2">
+              <select
+                className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-0"
+                name="id_insumo"
+                value={detalle.id_insumo}
+                required
+                onChange={(e) => handleDetalleChange(index, e)}
+              >
+                <option value="">Seleccione un insumo</option>
+                {insumos.filter(insumo => insumo.estado).map(insumo => (
+                  <option key={insumo.id_insumo} value={insumo.id_insumo}>
+                    {insumo.nombre}
+                  </option>
+                ))}
+              </select>
+              {errors[`id_insumo_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`id_insumo_${index}`]}</p>}
+            </td>
+
+            <td className="px-4 py-2">
+  <input
+    name="cantidad"
+    required
+    type="number"
+    value={detalle.cantidad}
+    onChange={(e) => {
+      // Validar que el valor no sea negativo
+      const value = e.target.value;
+      if (value >= 0) {
+        handleDetalleChange(index, e); // Solo se actualiza si el valor es >= 0
+      }}}
+    className="text-sm w-24 p-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0"
+  />
+  {errors[`cantidad_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`cantidad_${index}`]}</p>}
+</td>
+
+
+            <td className="px-4 py-2 text-righ">
+              <IconButton
+                color="red"
+                onClick={() => handleRemoveDetalle(index)}
+                size="sm"
+              >
+                <TrashIcon className="h-5 w-5" />
+              </IconButton>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <div className="flex justify-end mt-4">
+    <Button
+      size="sm"
+      onClick={handleAddDetalle}
+      className="flex items-center gap-2 bg-black text-white hover:bg-pink-800 px-4 py-2 rounded-md"
+    >
+      <PlusIcon className="h-5 w-5" />
+      Agregar Insumo
+    </Button>
+  </div>
+</div>
+
+
+</DialogBody>
+
+<DialogFooter className=" p-4 flex justify-end gap-4 border-t border-gray-200">
+  <Button
+    variant="text"
+    size="sm"
+    onClick={handleClose}
+    className="btncancelarm text-white"
+  >
+    Cancelar
+  </Button>
+  <Button
+    variant="gradient"
+    size="sm"
+    onClick={handleSave}
+    className="btnagregarm text-white"
+  >
+    Crear Ficha Técnica
+  </Button>
+</DialogFooter>
+</div>
   );
 }

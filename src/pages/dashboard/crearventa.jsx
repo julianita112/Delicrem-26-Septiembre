@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
+  DialogBody,
+  DialogFooter,
   Button,
   Input,
   Select,
@@ -24,7 +26,6 @@ export function CrearVenta({ clientes, productos, fetchVentas, onCancel }) {
     subtotal: 0 // Inicializar subtotal
   });
 
-
   const Toast = Swal.mixin({
     toast: true,
     position: 'top-end',
@@ -41,7 +42,6 @@ export function CrearVenta({ clientes, productos, fetchVentas, onCancel }) {
   const [pedidos, setPedidos] = useState([]); // Estado para almacenar los pedidos
   const [loadingPedidos, setLoadingPedidos] = useState(true); // Estado de carga
 
-  // useEffect para obtener los pedidos de la API cuando el componente se monte
   useEffect(() => {
     const fetchPedidos = async () => {
       try {
@@ -132,7 +132,7 @@ export function CrearVenta({ clientes, productos, fetchVentas, onCancel }) {
 
   const handleSave = async () => {
     const newErrors = {};
-    const today = new Date().toISOString().split("T")[0]; // Obtiene la fecha actual en formato 'YYYY-MM-DD'
+    const today = new Date().toISOString().split("T")[0]; 
   
     if (!selectedVenta.id_cliente) {
       newErrors.id_cliente = "El cliente es obligatorio";
@@ -165,10 +165,6 @@ export function CrearVenta({ clientes, productos, fetchVentas, onCancel }) {
       });
       return;
     }
-  
-    // Si no hay errores, procedes con el guardado.
-  
-  
     // Nueva lógica para verificar si la cantidad total de productos vendidos en la fecha supera el límite
     const fechaEntrega = selectedVenta.fecha_entrega;
     const cantidadTotalEnFecha = pedidos
@@ -226,9 +222,8 @@ export function CrearVenta({ clientes, productos, fetchVentas, onCancel }) {
     }
   };
   
-
   return (
-    <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <div className="flex flex-col gap-6 p-6 bg-gray-50 rounded-lg shadow-lg">
       <div
         style={{
           fontSize: '1.5rem',
@@ -239,21 +234,18 @@ export function CrearVenta({ clientes, productos, fetchVentas, onCancel }) {
       >
         Crear Venta
       </div>
-      <div className="flex gap-8">
-        <div className="w-1/2 flex flex-col gap-4">
-          {/* Mostrar un mensaje de carga mientras se obtienen los pedidos */}
-          {loadingPedidos ? (
-            <Typography variant="h6" color="blue">
-              Cargando pedidos...
-            </Typography>
-          ) : (
-            <div className="w-full max-w-xs">
+
+      <DialogBody divider className="flex flex-col max-h-[100vh] overflow-hidden">
+     <div className="flex flex-col gap-4 w-full p-4 bg-white rounded-lg shadow-sm">
+  <div className="flex gap-4">     
+    
+            <div className="flex flex-col gap-2 w-1/2">
               <Select
-                label="Número de Pedido"
+                label="Número de Pedido 'Opcional'"
                 name="numero_venta"
                 value={selectedVenta.numero_venta}
                 onChange={(value) => handlePedidoChange(value)}
-                className="w-full text-xs"
+               className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-0"
               >
                 {pedidos
                   .filter(pedido => pedido.id_estado === 6) // Filtrar pedidos con estado "pagado"
@@ -264,15 +256,13 @@ export function CrearVenta({ clientes, productos, fetchVentas, onCancel }) {
                   ))}
               </Select>
             </div>
-          )}
-
-          <div className="w-full max-w-xs">
+<div className="flex flex-col gap-2 w-1/2">
             <Select
               label="Cliente"
               name="id_cliente"
               value={selectedVenta.id_cliente}
               onChange={(e) => handleChange({ target: { name: "id_cliente", value: e } })}
-              className="w-full text-xs"
+               className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-0"
               required
             >
               {clientes
@@ -284,7 +274,9 @@ export function CrearVenta({ clientes, productos, fetchVentas, onCancel }) {
                 ))}
             </Select>
           </div>
-          <div className="w-full max-w-xs">
+          </div>
+          <div className="flex gap-4">
+          <div className="flex flex-col gap-2 w-1/2">
             <Input
               label="Fecha de Venta"
               name="fecha_venta"
@@ -295,7 +287,7 @@ export function CrearVenta({ clientes, productos, fetchVentas, onCancel }) {
               required
             />
           </div>
-          <div className="w-full max-w-xs">
+          <div className="flex flex-col gap-2 w-1/2">
             <Input
               label="Fecha de Entrega"
               name="fecha_entrega"
@@ -307,87 +299,127 @@ export function CrearVenta({ clientes, productos, fetchVentas, onCancel }) {
             />
           </div>
         </div>
+        <div className="w-full p-4 bg-white rounded-lg shadow-lg">
+  <Typography variant="h6" color="black" className="text-lg font-semibold mb-4">
+    Agregar Productos
+  </Typography>
+  <div className="flex flex-col gap-4 overflow-y-auto max-h-80"> {/* Aquí agregamos overflow-y-auto y max-h-80 */}
+    {selectedVenta.detalleVentas.length === 0 ? (
+      <div className="flex flex-col items-center justify-center p-4 bg-gray-100 rounded-lg shadow-sm">
+        <Typography variant="body1" color="gray-600">
+          No hay productos añadidos. Agrega uno nuevo.
+        </Typography>
+      </div>
+    ) : (
+      selectedVenta.detalleVentas.map((detalle, index) => (
+        <div key={index} className="flex flex-col md:flex-row items-start gap-4 mb-4 p-4 bg-white rounded-lg shadow-sm">
+          <div className="flex flex-col md:w-1/2 gap-2">
+            <label className="block text-sm font-medium text-gray-700">Producto:</label>
+            <Select
+              required
+              name="id_producto"
+              value={detalle.id_producto}
+              onChange={(e) => handleDetalleChange(index, { target: { name: "id_producto", value: e } })}
+              className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-0"
+              style={{ maxHeight: '200px', overflowY: 'auto' }} // Ajustes para la barra de desplazamiento
+            >
+              {productos.map((producto) => (
+                <Option key={producto.id_producto} value={producto.id_producto}>
+                  {producto.nombre}
+                </Option>
+              ))}
+            </Select>
+          </div>
+          <div className="flex flex-col md:flex-row gap-4 w-full">
+  <div className="flex flex-col md:w-1/4 gap-2">
+    <label className="block text-sm font-medium text-gray-700">Cantidad:</label>
+    <Input
+      name="cantidad"
+      type="number"
+      required
+      value={detalle.cantidad}
+      onChange={(e) => {
+        // Validar que el valor no sea negativo
+        const value = e.target.value;
+        if (value >= 0) {
+          handleDetalleChange(index, e); // Solo se actualiza si el valor es >= 0
+        }
+      }}
+      className="w-full text-xs border border-gray-300 rounded-lg p-2 focus:border-blue-500 focus:ring-0"
+    />
+  </div>
 
-        <div className="w-1/2 flex flex-col gap-4">
-          <Typography variant="h6" color="black">
-            Agregar Productos
-          </Typography>
+            <div className="flex flex-col md:w-1/8 px-10 gap-2">
+              <label className="block text-sm font-medium text-gray-700">Precio Unitario:</label>
+              <Input
+                name="precio_unitario"
+                type="number"
+                step="0.01"
+                disabled
+                value={detalle.precio_unitario}
+                className="text-sm bg-gray-100 border border-gray-300 rounded-lg" // Elimina el ancho fijo
+                style={{ width: '170px', padding: '4px' }} // Ajusta el tamaño y el padding
+                readOnly
+              />
+            </div>
 
-          <div className="bg-gray-100 p-4 rounded-lg shadow-md flex flex-col gap-2">
-            {selectedVenta.detalleVentas.map((detalle, index) => (
-              <div key={index} className="relative flex flex-col gap-2 mb-4">
-                <div className="flex flex-col gap-2">
-                  <Select
-                    label="Producto"
-                    required
-                    name="id_producto"
-                    value={detalle.id_producto}
-                    onChange={(e) => handleDetalleChange(index, { target: { name: "id_producto", value: e } })}
-                    className="w-full"
-                  >
-                    {productos.map((producto) => (
-                      <Option key={producto.id_producto} value={producto.id_producto}>
-                        {producto.nombre}
-                      </Option>
-                    ))}
-                  </Select>
-                  <Input
-                    label="Cantidad"
-                    name="cantidad"
-                    type="number"
-                    required
-                    value={detalle.cantidad}
-                    onChange={(e) => handleDetalleChange(index, e)}
-                    className="w-full"
-                  />
-                  <Input
-                    label="Precio Unitario"
-                    name="precio_unitario"
-                    type="number"
-                    step="0.01"
-                    value={detalle.precio_unitario}
-                    className="w-full"
-                    readOnly
-                  />
-                  <Input
-                    label="Subtotal"
-                    name="subtotal"
-                    type="number"
-                    step="0.01"
-                    value={detalle.subtotal}
-                    className="w-full"
-                    readOnly
-                  />
-                  <div className="flex justify-end">
-                    <IconButton
-                      color="red"
-                      onClick={() => handleRemoveDetalle(index)}
-                      className="btncancelarm"
-                      size="sm"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </IconButton>
-                  </div>
-                </div>
-              </div>
-            ))}
-            <div className="mt-2 flex justify-end">
-              <Button className="btnmas" size="sm" onClick={handleAddDetalle}>
-                <PlusIcon className="h-4 w-4 mr-1" />
-              </Button>
+            <div className="flex flex-col md:w-1/4 gap-2 custom-align">
+  <label className="block text-sm font-medium text-gray-700">Subtotal:</label>
+  <Input
+    name="subtotal"
+    type="text"
+    disabled
+    value={`$${(detalle.subtotal || 0).toFixed(2)}`}
+    readOnly
+    className="text-sm bg-gray-100 border border-gray-300 rounded-lg" // Elimina el ancho fijo
+    style={{ width: '120px', padding: '4px' }} // Ajusta el tamaño y el padding
+  />
+</div>
+
+
+
+<div className="flex items-center justify-center mt-4 md:mt-0 -ml-12">
+              <IconButton
+                color="red"
+                onClick={() => handleRemoveDetalle(index)}
+                size="sm"
+              >
+                <TrashIcon className="h-4 w-4" />
+              </IconButton>
             </div>
           </div>
-
-          <div className="flex justify-end mt-4">
-            <Typography variant="h6" color="black">
-              Total: ${selectedVenta.total.toFixed(2)}
-            </Typography>
-          </div>
         </div>
-      </div>
+      ))
+    )}
+  </div>
 
-      <div className="flex justify-end gap-2 mt-4">
-        <Button
+  <div className="flex items-center mt-4">
+  <Button
+  size="sm"
+  onClick={handleAddDetalle}
+  className="flex items-center gap-2 bg-black text-white hover:bg-pink-800 px-4 py-2 rounded-md normal-case"
+>
+  <PlusIcon className="h-5 w-5" />
+  Agregar Insumo
+</Button>
+
+  </div>
+
+  <div className="flex justify-end mt-4">
+    <Typography variant="h6" color="black">
+      Total: ${selectedVenta.total.toFixed(2)}
+    </Typography>
+  </div>
+</div>
+
+
+
+</div>
+</DialogBody>
+
+
+      <DialogFooter className=" p-4 flex justify-end gap-4 border-t border-gray-200">
+      <Button
           variant="text"
           className="btncancelarm"
           size="sm"
@@ -403,7 +435,8 @@ export function CrearVenta({ clientes, productos, fetchVentas, onCancel }) {
         >
           Crear Venta
         </Button>
-      </div>
-    </div>
+
+ </DialogFooter>
+</div>
   );
 }

@@ -344,14 +344,14 @@ export function Ventas() {
             <div className="flex items-center gap-4">
               <Button
                 onClick={handleGenerarReporte}
-                className="bg-black text-white hover:bg-pink-800 transition rounded px-4 py-2"
+                className="bg-gray-200 text-black hover:bg-gray-300 transition rounded px-4 py-2 normal-case"
                 size="sm"
               >
                 Reporte
               </Button>
               <Button
                 onClick={() => setMostrarInforme(true)}
-                className="bg-black text-white hover:bg-pink-800 transition rounded px-4 py-2"
+                className="bg-gray-200 text-black hover:bg-gray-300 transition rounded px-4 py-2 normal-case"
                 size="sm"
               >
                 Informe
@@ -441,8 +441,8 @@ export function Ventas() {
                                 <Button
                                   onClick={() => handleToggleActivo(venta.id_venta)}
                                   className={`${
-                                    venta.id_estado !== 5 && venta.id_estado !== 1 ? 'bg-red-600 hover:bg-red-800' : 'bg-gray-400 cursor-not-allowed'
-                                  } text-white rounded-sm px-1.5 py-0.5 transition h-7 w-16`}
+                                    venta.id_estado !== 5 && venta.id_estado !== 1 ? 'bg-red-700 hover:bg-red-800' : 'bg-gray-400 cursor-not-allowed'
+                                  } text-white rounded-sm px-1.5 py-0.5 transition h-7 w-16 normal-case`}
                                   size="sm"
                                   disabled={venta.id_estado === 5 || venta.id_estado === 1} 
                                 >
@@ -471,7 +471,7 @@ export function Ventas() {
     onClick={() => handleEntregarVenta(venta.numero_venta)}
     className={`${
       venta.id_estado === 3 ? 'bg-green-600 hover:bg-green-800' : 'bg-gray-400 cursor-not-allowed'
-    } text-white rounded-sm px-2 py-1 transition h-7`}
+    } text-white rounded-sm px-2 py-1 transition h-7 normal-case`}
     size="sm"
     disabled={venta.id_estado !== 3} // Solo habilitar si está en "Listo Para Entrega"
   >

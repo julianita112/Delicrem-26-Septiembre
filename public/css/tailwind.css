@@ -259,3 +259,24 @@
   color: white; /* Color del texto */
   border-radius: 50%; /* Hace que el fondo sea circular */
 }
+
+/* Estilo personalizado para el input */
+.input-custom {
+  border: 1px solid #d1d5db !important; /* Color del borde */
+  border-radius: 0.375rem !important; /* Radio del borde */
+  padding: 0.5rem !important; /* Espaciado interno */
+  outline: none !important; /* Elimina el borde de enfoque */
+  box-shadow: none !important; /* Elimina cualquier sombra */
+}
+
+/* Estilo para el enfoque del input */
+.input-custom:focus {
+  border-color: #3b82f6 !important; /* Color del borde al hacer foco */
+  box-shadow: none !important; /* Elimina la sombra al hacer foco */
+}
+  
+
+.custom-align {
+
+  margin-left: -40px; /* Ajusta el valor según sea necesario */
+}

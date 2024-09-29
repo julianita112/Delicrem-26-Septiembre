@@ -224,14 +224,14 @@ export function Compras() {
 
                 <Button 
                   onClick={handleGenerarReporte}  
-                  className="bg-black text-white hover:bg-pink-800 transition rounded px-4 py-2"
-                  size="sm"
+                  className="bg-gray-200 text-black hover:bg-gray-300 transition rounded px-4 py-2 normal-case"
+                 
                 >
                   Reporte
                 </Button>
                 <Button 
                   onClick={handleGenerarInforme} 
-                  className="bg-black text-white hover:bg-pink-800 transition rounded px-4 py-2"
+                  className="bg-gray-200 text-black hover:bg-gray-300 transition rounded px-4 py-2 normal-case"
                   size="sm"
                 >
                   Informe
@@ -287,8 +287,8 @@ export function Compras() {
 
                             <Button
                               className={`${
-                                compra.id_estado === 5 ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-800'
-                              } text-white rounded-sm px-1.5 py-0.5 transition h-7 w-16`}
+                                compra.id_estado === 5 ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-700 hover:bg-red-800'
+                              } text-white rounded-sm px-1.5 py-0.5 transition h-7 w-16 normal-case`}
                               onClick={() => toggleCancel(compra.id_compra)}
                               disabled={compra.id_estado === 5}
                             >

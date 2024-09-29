@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Button,
   Input,
@@ -24,6 +24,16 @@ export function CrearCompra({ handleClose, fetchCompras, proveedores, insumos })
   });
   const [errors, setErrors] = useState({});
 
+    // Establecer la fecha de hoy como la fecha de registro cuando el componente se monta
+    useEffect(() => {
+      const today = new Date().toISOString().split("T")[0]; // Formato YYYY-MM-DD
+      setSelectedCompra((prevState) => ({
+        ...prevState,
+        fecha_registro: today,
+      }));
+    }, []);
+  
+
   const Toast = Swal.mixin({
     toast: true,
     position: "top-end",
@@ -43,10 +53,11 @@ export function CrearCompra({ handleClose, fetchCompras, proveedores, insumos })
     }
     if (!selectedCompra.fecha_compra) {
       newErrors.fecha_compra = "La fecha de compra es obligatoria";
+    } else if (new Date(selectedCompra.fecha_compra) > new Date()) {
+      newErrors.fecha_compra = "La fecha de compra no puede ser en el futuro";
     }
-    if (!selectedCompra.fecha_registro) {
-      newErrors.fecha_registro = "La fecha de registro es obligatoria";
-    }
+    
+
     if (!selectedCompra.numero_recibo) {
       newErrors.numero_recibo = "El número de recibo es obligatorio";
     }
@@ -166,20 +177,17 @@ export function CrearCompra({ handleClose, fetchCompras, proveedores, insumos })
           delete newErrors.id_proveedor;
         }
         break;
-      case "fecha_compra":
-        if (!value) {
-          newErrors.fecha_compra = "La fecha de compra es obligatoria";
-        } else {
-          delete newErrors.fecha_compra;
-        }
-        break;
-      case "fecha_registro":
-        if (!value) {
-          newErrors.fecha_registro = "La fecha de registro es obligatoria";
-        } else {
-          delete newErrors.fecha_registro;
-        }
-        break;
+        case "fecha_compra":
+          if (!value) {
+            newErrors.fecha_compra = "La fecha de compra es obligatoria";
+          } else if (new Date(value) > new Date().setHours(0, 0, 0, 0)) {
+            newErrors.fecha_compra = "La fecha de compra no puede ser en el futuro";
+          } else {
+            delete newErrors.fecha_compra;
+          }
+          break;
+        
+     
       case "numero_recibo":
         if (!value) {
           newErrors.numero_recibo = "El número de recibo es obligatorio";
@@ -279,7 +287,7 @@ export function CrearCompra({ handleClose, fetchCompras, proveedores, insumos })
 
     <div className="flex-1 flex flex-col gap-4">
       <div className="flex gap-4 mb-4">
-      <div className="flex flex-col gap-4 w-1/2 pr-4 bg-white rounded-lg shadow-sm p-4">
+      <div className="flex flex-col gap-4 w-1/4 pr-4 bg-white rounded-lg shadow-sm p-4">
       <div
         style={{
           fontSize: '1.5rem',
@@ -315,8 +323,9 @@ export function CrearCompra({ handleClose, fetchCompras, proveedores, insumos })
             {errors.id_proveedor && <p className="text-red-500 text-xs mt-1">{errors.id_proveedor}</p>}
           </div>
           <div>
+          <label className="block text-sm font-medium text-black">Fecha de Compra:</label>
             <Input
-              label="Fecha de Compra"
+           
               name="fecha_compra"
               type="date"
               value={selectedCompra.fecha_compra}
@@ -327,20 +336,21 @@ export function CrearCompra({ handleClose, fetchCompras, proveedores, insumos })
             {errors.fecha_compra && <p className="text-red-500 text-xs mt-1">{errors.fecha_compra}</p>}
           </div>
           <div>
+          <label className="block text-sm font-medium text-black">Fecha de Registro:</label>
             <Input
               label="Fecha de Registro"
               name="fecha_registro"
               type="date"
               value={selectedCompra.fecha_registro}
-              onChange={handleChange}
-              className={`w-full ${errors.fecha_registro ? "border-red-500" : ""}`}
-              required
+              disabled // Deshabilitar para que no se pueda editar
+              className="w-full bg-gray-100" // Cambiar el fondo para indicar que está deshabilitado
             />
             {errors.fecha_registro && <p className="text-red-500 text-xs mt-1">{errors.fecha_registro}</p>}
           </div>
           <div>
+          <label className="block text-sm font-medium text-black">Nro. de Recibo:</label>
             <Input
-              label="Número de Recibo"
+
               name="numero_recibo"
               type="text"
               value={selectedCompra.numero_recibo}
@@ -352,14 +362,14 @@ export function CrearCompra({ handleClose, fetchCompras, proveedores, insumos })
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 w-full max-w-4xl overflow-y-auto p-4 bg-white rounded-lg shadow-md">
+        <div className="flex flex-col gap-4 w-full max-w-4xl overflow-y-auto p-4 bg-white rounded-lg shadow-md" style={{ maxHeight: '400px' }}> {/* Ajusta la altura máxima según sea necesario */}
   <Typography variant="h6" color="blue-gray" className="text-lg font-semibold">
     Insumos a comprar
   </Typography>
 
-  <div className="flex flex-col gap-4">
+  <div className="flex flex-col gap-4 overflow-y-auto"> {/* Asegúrate de que esta sección también tenga overflow */}
     {selectedCompra.detalleCompras.map((detalle, index) => (
-      <div key={index} className="flex flex-col md:flex-row items-start gap-4 mb-4 p-4 bg-gray-100 rounded-lg shadow-sm">
+      <div key={index} className="flex flex-col md:flex-row items-start gap-4 mb-4 p-4 bg-white rounded-lg shadow-sm">
         <div className="flex flex-col md:flex-row gap-4 w-full">
         
           <div className="flex flex-col md:w-1/2 gap-2">
@@ -372,7 +382,6 @@ export function CrearCompra({ handleClose, fetchCompras, proveedores, insumos })
               onChange={(e) => {
                 handleDetalleChange(index, { target: { name: "id_insumo", value: e.target.value } });
                 setErrors({ ...errors, [`insumo_${index}`]: "" });
-                <p className="text-red-500 text-xs mt-1">{errors[`insumo_${index}`]}</p>
               }}
             >
               <option value="">Seleccione un insumo</option>
@@ -456,11 +465,12 @@ export function CrearCompra({ handleClose, fetchCompras, proveedores, insumos })
       <Button
         size="sm"
         onClick={handleAddDetalle}
-        className="flex items-center gap-2 bg-black text-white hover:bg-pink-800 px-4 py-2 rounded-md"
-      >
-        <PlusIcon className="h-5 w-5" />
-        <span className="sr-only">Agregar Detalle</span>
-      </Button>
+        className="flex items-center gap-2 bg-black text-white hover:bg-pink-800 px-4 py-2 rounded-md normal-case"
+>
+<PlusIcon className="h-5 w-5" />
+  Agregar Insumo
+</Button>
+
     </div>
   </div>
 
