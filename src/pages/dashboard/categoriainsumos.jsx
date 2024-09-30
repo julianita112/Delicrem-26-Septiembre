@@ -465,7 +465,7 @@ export function CategoriaInsumos() {
   className="max-w-md w-10/12 p-6 bg-white rounded-3xl shadow-xl"
   size="xs"
 >
-  <DialogHeader className="text-2xl font-semibold text-gray-800">
+  <DialogHeader className="text-2xl font-semibold text-black">
     {editMode ? "Editar Categoría de Insumos" : "Crear Categoría de Insumos"}
   </DialogHeader>
   <DialogBody divider className="space-y-4">
@@ -486,7 +486,6 @@ export function CategoriaInsumos() {
         value={selectedCategoria.descripcion}
         onChange={handleChange}
         required
-        
         className="w-full"
         rows="4"
       />

@@ -2,7 +2,6 @@ import {
   DialogBody,
   DialogFooter,
   Typography,
-  Input,
   Textarea,
   Button,
   IconButton,
@@ -23,8 +22,9 @@ export function EditarFichaTecnica({ handleClose, fetchFichas, ficha, productos,
   const handleChange = (e) => {
     const { name, value } = e.target;
     setSelectedFicha({ ...selectedFicha, [name]: value });
-    setErrors({ ...errors, [name]: "" });
-  };
+    validateField(name, value); // Validar en tiempo real
+ }; 
+
 
 
   const Toast = Swal.mixin({
@@ -44,15 +44,96 @@ export function EditarFichaTecnica({ handleClose, fetchFichas, ficha, productos,
     const detalles = [...selectedFicha.detallesFichaTecnicat];
     detalles[index][name] = value;
     setSelectedFicha({ ...selectedFicha, detallesFichaTecnicat: detalles });
-    setErrors({ ...errors, [`${name}_${index}`]: "" });
+    validateField(`${name}_${index}`, value); // Validar en tiempo real
   };
+  
 
-  const hasDuplicateInsumos = () => {
-    const insumosIds = selectedFicha.detallesFichaTecnicat.map(detalle => detalle.id_insumo);
-    return insumosIds.some((id, index) => insumosIds.indexOf(id) !== index);
+  const validateField = (name, value) => {
+    const newErrors = { ...errors };
+  
+    // Validaciones para los campos de producto, descripción e insumos
+    if (name === "descripcion") {
+
+      // Validación para descripción
+      if (!value) {
+        newErrors.descripcion = "La descripción es requerida";
+      } else if (value.length < 5) {
+        newErrors.descripcion = "La descripción debe tener al menos 5 caracteres.";
+      } else if (value.length > 25) {
+        newErrors.descripcion = "La descripción no puede tener más de 25 caracteres.";
+      } else if (/[^a-zA-Z0-9\s]/.test(value)) {
+        newErrors.descripcion = "La descripción no puede contener caracteres especiales.";
+      } else {
+        delete newErrors.descripcion; // Eliminar el error si es válido
+      }
+    } else if (name === "insumos") {
+      // Validación para insumos
+      if (!value) {
+        newErrors.insumos = "Los insumos son requeridos";
+      } else if (value.length < 5) {
+        newErrors.insumos = "Los insumos deben tener al menos 5 caracteres.";
+      } else if (value.length > 25) {
+        newErrors.insumos = "Los insumos no pueden tener más de 25 caracteres.";
+      } else if (/[^a-zA-Z0-9\s]/.test(value)) {
+        newErrors.insumos = "Los insumos no pueden contener caracteres especiales.";
+      } else {
+        delete newErrors.insumos; // Eliminar el error si es válido
+      }
+    }
+  
+    // Validación para los detalles de insumos
+    if (name.startsWith("id_insumo_")) {
+      const index = name.split("_")[2];
+      if (!value) {
+        newErrors[`id_insumo_${index}`] = "El insumo es requerido";
+      } else {
+        delete newErrors[`id_insumo_${index}`]; // Eliminar el error si es válido
+      }
+    } else if (name.startsWith("cantidad_")) {
+      const index = name.split("_")[1];
+      if (!value) {
+          newErrors[`cantidad_${index}`] = "La cantidad es requerida";
+      } else if (value === "0") {
+          newErrors[`cantidad_${index}`] = "La cantidad no puede ser 0.";
+      } else if (value < 1) {
+          newErrors[`cantidad_${index}`] = "La cantidad debe ser al menos 1.";
+      } else {
+          delete newErrors[`cantidad_${index}`]; // Eliminar el error si es válido
+      }
+  }
+  
+  
+    // Validar duplicados de insumos
+    if (hasDuplicateInsumos()) {
+      newErrors.general = "No se pueden tener insumos duplicados.";
+    } else {
+      delete newErrors.general; // Eliminar el error si no hay duplicados
+    }
+  
+    setErrors(newErrors); // Actualizar los errores
+    return Object.keys(newErrors).length === 0; // Retornar si no hay errores
   };
+  
+  
+    const hasDuplicateInsumos = () => {
+      const insumosIds = selectedFicha.detallesFichaTecnicat.map(detalle => detalle.id_insumo);
+      return insumosIds.some((id, index) => insumosIds.indexOf(id) !== index);
+    };
 
   const handleAddDetalle = () => {
+    // Verificar si hay campos vacíos
+    const hasEmptyFields = selectedFicha.detallesFichaTecnicat.some(detalle => 
+      !detalle.id_insumo || !detalle.cantidad
+    );
+  
+    if (hasEmptyFields) {
+      Toast.fire({
+        icon: 'error',
+        title: 'Por favor, completa todos los campos antes de agregar un nuevo insumo.'
+      });
+      return;
+    }
+  
     if (hasDuplicateInsumos()) {
       Toast.fire({
         icon: 'error',
@@ -67,6 +148,7 @@ export function EditarFichaTecnica({ handleClose, fetchFichas, ficha, productos,
     });
   };
   
+  
 
   const handleRemoveDetalle = (index) => {
     const detalles = [...selectedFicha.detallesFichaTecnicat];
@@ -76,7 +158,6 @@ export function EditarFichaTecnica({ handleClose, fetchFichas, ficha, productos,
 
   const validateForm = () => {
     const newErrors = {};
-    if (!selectedFicha.id_producto) newErrors.id_producto = "El producto es requerido";
     if (!selectedFicha.descripcion) newErrors.descripcion = "La descripción es requerida";
     if (!selectedFicha.insumos) newErrors.insumos = "Los insumos son requeridos";
     
@@ -85,12 +166,22 @@ export function EditarFichaTecnica({ handleClose, fetchFichas, ficha, productos,
       if (!detalle.cantidad) newErrors[`cantidad_${index}`] = "La cantidad es requerida";
     });
 
+
+    if (hasDuplicateInsumos()) {
+      newErrors.general = "No se pueden tener insumos duplicados.";
+    }
+
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
     if (!validateForm()) {
+      Toast.fire({
+        icon: 'error',
+        title: 'Por favor, completa los datos correctamente.'
+      });
       return;
     }
 
@@ -137,19 +228,19 @@ export function EditarFichaTecnica({ handleClose, fetchFichas, ficha, productos,
           <div className="flex flex-col gap-2 w-1/2">
             <label className="block text-sm font-medium text-black">Producto:</label>
             <select
-               className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-0"
-              name="id_producto"
-              required
-              value={selectedFicha.id_producto}
-              onChange={handleChange}
-            >
-              <option value="">Seleccione un producto</option>
-              {productos.filter(producto => producto.estado).map(producto => (
-                <option key={producto.id_producto} value={producto.id_producto}>
-                  {producto.nombre}
-                </option>
-              ))}
-            </select>
+  className="w-full p-2 border border-blue-gray rounded-lg text-sm focus:border-blue-500 focus:ring-0 bg-blue-gray-50 cursor-not-allowed"
+  name="id_producto"
+  disabled
+  value={selectedFicha.id_producto}
+  onChange={handleChange}
+>
+  <option value="">Seleccione un producto</option>
+  {productos.filter(producto => producto.estado).map(producto => (
+    <option key={producto.id_producto} value={producto.id_producto}>
+      {producto.nombre}
+    </option>
+  ))}
+</select>
             {errors.id_producto && <p className="text-red-500 text-xs mt-1">{errors.id_producto}</p>}
           </div>
           </div>
@@ -176,7 +267,7 @@ export function EditarFichaTecnica({ handleClose, fetchFichas, ficha, productos,
               required
               value={selectedFicha.insumos}
               onChange={handleChange}
-              rows={3}
+              rows={2}
                className="text-sm w-full max-w-[400px] resize-none border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0"
             />
             {errors.insumos && <p className="text-red-500 text-xs mt-1">{errors.insumos}</p>}
@@ -189,7 +280,6 @@ export function EditarFichaTecnica({ handleClose, fetchFichas, ficha, productos,
   <Typography variant="h6" color="black" className="text-lg font-semibold mb-4">
     Detalles de Insumos
   </Typography>
-
   <div className="overflow-x-auto max-h-64">
     <table className="min-w-full table-auto border-collapse">
       <thead>

@@ -34,13 +34,10 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
             cantidad: detalle.cantidad
           })),
         });
-  
-        // Limpiar las validaciones al seleccionar una ficha existente
         setErrors({});
       }
     }
   }, [fichaSeleccionada, fichas]);
-  
 
   const Toast = Swal.mixin({
     toast: true,
@@ -54,7 +51,6 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
     },
   });
   
-
   const handleFichaChange = (e) => {
     setFichaSeleccionada(e.target.value);
   };
@@ -63,43 +59,88 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
     const { name, value } = e.target;
     setSelectedFicha({ ...selectedFicha, [name]: value });
     validateField(name, value); // Validar en tiempo real
-  };
+ }; 
 
-  const handleDetalleChange = (index, e) => {
-    const { name, value } = e.target;
-    const detalles = [...selectedFicha.detallesFichaTecnicat];
-    detalles[index][name] = value;
-    setSelectedFicha({ ...selectedFicha, detallesFichaTecnicat: detalles });
-    validateField(`${name}_${index}`, value); // Validar en tiempo real
-  };
+ const handleDetalleChange = (index, e) => {
+  const { name, value } = e.target;
+  const detalles = [...selectedFicha.detallesFichaTecnicat];
+  detalles[index][name] = value;
+  setSelectedFicha({ ...selectedFicha, detallesFichaTecnicat: detalles });
+  validateField(`${name}_${index}`, value); // Validar en tiempo real
+};
 
-  const validateField = (name, value) => {
-    const newErrors = { ...errors };
 
-    if (name === "id_producto" && !value) {
+const validateField = (name, value) => {
+  const newErrors = { ...errors };
+
+  // Validaciones para los campos de producto, descripción e insumos
+  if (name === "id_producto") {
+    if (!value) {
       newErrors.id_producto = "El producto es requerido";
-    } else if (name === "descripcion" && !value) {
-      newErrors.descripcion = "La descripción es requerida";
-    } else if (name === "insumos" && !value) {
-      newErrors.insumos = "Los insumos son requeridos";
-    } else if (name.startsWith("id_insumo_")) {
-      const index = name.split("_")[2];
-      if (!value) {
-        newErrors[`id_insumo_${index}`] = "El insumo es requerido";
-      } else {
-        delete newErrors[`id_insumo_${index}`];
-      }
-    } else if (name.startsWith("cantidad_")) {
-      const index = name.split("_")[1];
-      if (!value) {
-        newErrors[`cantidad_${index}`] = "La cantidad es requerida";
-      } else {
-        delete newErrors[`cantidad_${index}`];
-      }
+    } else {
+      delete newErrors.id_producto; // Eliminar el error si es válido
     }
+  } else if (name === "descripcion") {
+    // Validación para descripción
+    if (!value) {
+      newErrors.descripcion = "La descripción es requerida";
+    } else if (value.length < 5) {
+      newErrors.descripcion = "La descripción debe tener al menos 5 caracteres.";
+    } else if (value.length > 25) {
+      newErrors.descripcion = "La descripción no puede tener más de 25 caracteres.";
+    } else if (/[^a-zA-Z0-9\s]/.test(value)) {
+      newErrors.descripcion = "La descripción no puede contener caracteres especiales.";
+    } else {
+      delete newErrors.descripcion; // Eliminar el error si es válido
+    }
+  } else if (name === "insumos") {
+    // Validación para insumos
+    if (!value) {
+      newErrors.insumos = "Los insumos son requeridos";
+    } else if (value.length < 5) {
+      newErrors.insumos = "Los insumos deben tener al menos 5 caracteres.";
+    } else if (value.length > 25) {
+      newErrors.insumos = "Los insumos no pueden tener más de 25 caracteres.";
+    } else if (/[^a-zA-Z0-9\s]/.test(value)) {
+      newErrors.insumos = "Los insumos no pueden contener caracteres especiales.";
+    } else {
+      delete newErrors.insumos; // Eliminar el error si es válido
+    }
+  }
 
-    setErrors(newErrors);
-  };
+  // Validación para los detalles de insumos
+  if (name.startsWith("id_insumo_")) {
+    const index = name.split("_")[2];
+    if (!value) {
+      newErrors[`id_insumo_${index}`] = "El insumo es requerido";
+    } else {
+      delete newErrors[`id_insumo_${index}`]; // Eliminar el error si es válido
+    }
+  } else if (name.startsWith("cantidad_")) {
+    const index = name.split("_")[1];
+    if (!value) {
+        newErrors[`cantidad_${index}`] = "La cantidad es requerida";
+    } else if (value === "0") {
+        newErrors[`cantidad_${index}`] = "La cantidad no puede ser 0.";
+    } else if (value < 1) {
+        newErrors[`cantidad_${index}`] = "La cantidad debe ser al menos 1.";
+    } else {
+        delete newErrors[`cantidad_${index}`]; // Eliminar el error si es válido
+    }
+}
+
+
+  // Validar duplicados de insumos
+  if (hasDuplicateInsumos()) {
+    newErrors.general = "No se pueden tener insumos duplicados.";
+  } else {
+    delete newErrors.general; // Eliminar el error si no hay duplicados
+  }
+
+  setErrors(newErrors); // Actualizar los errores
+  return Object.keys(newErrors).length === 0; // Retornar si no hay errores
+};
+
 
   const hasDuplicateInsumos = () => {
     const insumosIds = selectedFicha.detallesFichaTecnicat.map(detalle => detalle.id_insumo);
@@ -128,7 +169,6 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
       return;
     }
   
-  
     setSelectedFicha({
       ...selectedFicha,
       detallesFichaTecnicat: [...selectedFicha.detallesFichaTecnicat, { id_insumo: "", cantidad: "" }]
@@ -144,7 +184,6 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
     });
   };
   
-
   const validateForm = () => {
     const newErrors = {};
     if (!selectedFicha.id_producto) newErrors.id_producto = "El producto es requerido";
@@ -166,7 +205,6 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
 
   const handleSave = async () => {
     if (!validateForm()) {
-      // Muestra un toast si hay errores en el formulario
       Toast.fire({
         icon: 'error',
         title: 'Por favor, completa los datos correctamente.'
@@ -197,7 +235,6 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
     }
   };    
   
-
   return (
     <div className="flex flex-col gap-6 p-6 bg-gray-50 rounded-lg shadow-lg">
       <div
@@ -230,7 +267,6 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
     </select>
   </div>
 
-  {/* Select para Producto */}
   <div className="flex flex-col gap-2 w-1/2">
     <label className="block text-sm font-medium text-black">Producto:</label>
     <select
@@ -251,7 +287,6 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
   </div>
 </div>
 
-
 <div className="flex gap-4">
 <div className="flex flex-col gap-2 w-1/2">
       <label className="block text-sm font-medium text-black">Descripción de la ficha técnica:</label>
@@ -265,7 +300,6 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
       />
       {errors.descripcion && <p className="text-red-500 text-xs mt-1">{errors.descripcion}</p>}
     </div>
-
     <div className="flex flex-col gap-2 w-1/2">
       <label className="block text-sm font-medium text-black">Descripción detallada de los insumos:</label>
       <Textarea
@@ -280,13 +314,11 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
     </div>
   </div>
   </div>
-
- {/* Tabla de Detalles de Insumos con barra de desplazamiento y diseño estético */}
+  
 <div className="w-full p-4 bg-white rounded-lg shadow-lg">
   <Typography variant="h6" color="black" className="text-lg font-semibold mb-4">
     Detalles de Insumos
   </Typography>
-
   <div className="overflow-x-auto max-h-64">
     <table className="min-w-full table-auto border-collapse">
       <thead>
@@ -316,7 +348,6 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
               </select>
               {errors[`id_insumo_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`id_insumo_${index}`]}</p>}
             </td>
-
             <td className="px-4 py-2">
   <input
     name="cantidad"
@@ -324,17 +355,14 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
     type="number"
     value={detalle.cantidad}
     onChange={(e) => {
-      // Validar que el valor no sea negativo
       const value = e.target.value;
       if (value >= 0) {
-        handleDetalleChange(index, e); // Solo se actualiza si el valor es >= 0
+        handleDetalleChange(index, e); 
       }}}
     className="text-sm w-24 p-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0"
   />
   {errors[`cantidad_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`cantidad_${index}`]}</p>}
 </td>
-
-
             <td className="px-4 py-2 text-righ">
               <IconButton
                 color="red"
@@ -349,7 +377,6 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
       </tbody>
     </table>
   </div>
-
   <div className="flex justify-end mt-4">
     <Button
       size="sm"
@@ -361,10 +388,7 @@ export function CrearFichaTecnica({ handleClose, fetchFichas, productos, insumos
     </Button>
   </div>
 </div>
-
-
 </DialogBody>
-
 <DialogFooter className=" p-4 flex justify-end gap-4 border-t border-gray-200">
   <Button
     variant="text"

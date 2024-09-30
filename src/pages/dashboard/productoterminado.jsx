@@ -13,6 +13,7 @@ import {
 import { PlusIcon, PencilIcon, TrashIcon, EyeIcon } from "@heroicons/react/24/solid";
 import { useState, useEffect } from "react";
 import axios from "../../utils/axiosConfig";
+import { Textarea } from "@material-tailwind/react"; 
 import Swal from 'sweetalert2';
 import { Producir } from "./Producir"; // Importar el nuevo componente
 
@@ -111,10 +112,6 @@ export function ProductoTerminado() {
       });
       return; // Salir si la validación falla
     }
-    
-    
-    
-    
     if (!validateForm()) return; // Verifica si hay errores antes de guardar
     try {
       if (editMode) {
@@ -144,7 +141,6 @@ export function ProductoTerminado() {
   const validateForm = () => {
     const newErrors = {};
   
-    // Validación del nombre
     if (!selectedProducto.nombre) {
       newErrors.nombre = "El nombre es requerido";
     } else if (selectedProducto.nombre.length < 2 || selectedProducto.nombre.length > 15) {
@@ -165,19 +161,17 @@ export function ProductoTerminado() {
 // Validación del precio
 if (!selectedProducto.precio) {
   newErrors.precio = "El precio es requerido";
-} else if (selectedProducto.precio.length < 3 || selectedProducto.precio.length > 4) {
-  newErrors.precio = "El precio debe contener entre 3 y 4 dígitos";
+} else if (selectedProducto.precio.length < 3 || selectedProducto.precio.length > 4) { // Cambiado a 5
+  newErrors.precio = "El precio debe contener entre 3 y 5 dígitos"; // Actualizado el mensaje
 } else if (!/^\d+$/.test(selectedProducto.precio)) {
   newErrors.precio = "El precio solo puede contener números";
 } else if (selectedProducto.precio === "0" || selectedProducto.precio === "0000") {
   newErrors.precio = "El precio no puede ser 0 o 0000";
 }
-
   
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -226,8 +220,6 @@ if (!selectedProducto.precio) {
     }
   };
 
- 
-
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
   };
@@ -254,7 +246,6 @@ if (!selectedProducto.precio) {
         // Verificar si hay productos asignados a una orden de producción
         const ordenesResponse = await axios.get(`http://localhost:3000/api/ordenesProduccion`);
         const productosConOrden = ordenesResponse.data.filter(orden => orden.id_producto === id_producto);
-  
         // Verificar si hay productos asignados a una venta
         const ventasResponse = await axios.get(`http://localhost:3000/api/ventas`);
         const productosConVenta = ventasResponse.data.filter(venta => venta.id_producto === id_producto);
@@ -310,7 +301,6 @@ if (!selectedProducto.precio) {
     }
   };
   
-  
   const indexOfLastProducto = currentPage * productosPerPage;
   const indexOfFirstProducto = indexOfLastProducto - productosPerPage;
   const currentProductos = filteredProductos.slice(indexOfFirstProducto, indexOfLastProducto);
@@ -331,9 +321,7 @@ if (!selectedProducto.precio) {
         <CardBody className="p-4">
           <Button onClick={handleCreate} className="btnagregar" size="sm" startIcon={<PlusIcon />}>
             Crear Producto
-          </Button>
-
-         
+          </Button>       
           <input
   type="text"
   placeholder="Buscar por nombre de Producto..."
@@ -341,9 +329,7 @@ if (!selectedProducto.precio) {
   onChange={handleSearchChange}
   className="border border-gray-300 rounded-md focus:border-blue-500 appearance-none shadow-none py-2 px-4 text-sm"
   style={{ width: '265px', marginLeft: '400px' }} // Ajuste en el margen izquierdo
-/>
-
-                
+/>               
           <div className="mb-1">
             <Typography variant="h5" color="blue-gray" className="mb-4">
               Lista de Productos
@@ -394,7 +380,6 @@ if (!selectedProducto.precio) {
     />
   </div>
 </label>
-
                       </td>
                       <td className="px-6 py-2 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex space-x-1">
@@ -449,12 +434,15 @@ if (!selectedProducto.precio) {
         </CardBody>
       </Card>
 
-      <Dialog open={open} handler={handleOpen} className="max-w-md w-11/12 p-6 bg-white rounded-lg shadow-lg" size="xs">
-        <DialogHeader className="text-lg font-semibold  border-b border-gray-200 pb-4">
-          {editMode ? "Editar Producto Terminado" : "Crear Producto Terminado"}
+      <Dialog open={open} handler={handleOpen} 
+      className="max-w-md w-10/12 p-6 bg-white rounded-3xl shadow-xl"
+  size="xs"
+       >
+       <DialogHeader className="text-2xl font-semibold text-black">
+          {editMode ? "Editar Producto Terminado" : "Crear Producto"}
         </DialogHeader>
-        <DialogBody className="space-y-4">
-          <div>
+        <DialogBody divider className="space-y-4">
+    <div className="space-y-3">
             <Input
               name="nombre"
               label="Nombre del Producto"
@@ -467,35 +455,47 @@ if (!selectedProducto.precio) {
             {errors.nombre && <Typography className="text-red-500 mt-1 text-sm">{errors.nombre}</Typography>}
           </div>
           <div>
-  <label className="block text-sm font-medium text-gray-700" htmlFor="descripcion">
-    Descripción del producto
-  </label>
-  <textarea
+  <Textarea
+      label="Breve descripción del Producto"
     name="descripcion"
     value={selectedProducto.descripcion}
     required
     onChange={handleChange}
-    className="mt-2 block w-full rounded-lg border border-gray-300 focus:border-gray-500 focus:ring focus:ring-gray-200"
-    rows="3" // Puedes ajustar el número de filas según tus necesidades
+      className="w-full"
+        rows="4"
   />
   {errors.descripcion && (
     <Typography className="text-red-500 mt-1 text-sm">{errors.descripcion}</Typography>
   )}
 </div>
-
-          <div>
-            <Input
-              name="precio"
-              label="Precio Unitario"
-              type="number"
-              value={selectedProducto.precio}
-              onChange={handleChange}
-              required
-             
-              className="rounded-lg border-gray-300"
-            />
-            {errors.precio && <Typography className="text-red-500 mt-1 text-sm">{errors.precio}</Typography>}
-          </div>
+<div>
+  <Input
+    name="precio"
+    label="Precio Unitario"
+    type="number"
+    value={selectedProducto.precio}
+    onChange={(e) => {
+      const value = e.target.value;
+      if (value < 0) {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          precio: "El precio no puede ser negativo",
+        }));
+      } else {
+        // Limpia el error si el valor es válido
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          precio: undefined,
+        }));
+      }
+      handleChange(e);
+    }}
+    required
+    min="0" // Establecer el mínimo a 0 para no permitir números negativos
+    className="rounded-lg border-gray-300"
+  />
+  {errors.precio && <Typography className="text-red-500 mt-1 text-sm">{errors.precio}</Typography>}
+</div>
         </DialogBody>
         <DialogFooter className="flex justify-end pt-4">
           <Button variant="text" className="btncancelarm" size="sm" onClick={handleOpen}>

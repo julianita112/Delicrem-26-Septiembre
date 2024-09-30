@@ -502,37 +502,75 @@ export function Insumos() {
             {errors.nombre && <Typography className="text-red-500 mt-1 text-sm">{errors.nombre}</Typography>}
           </div>
           <div>
-            <Select
-              label="Categoría de Insumo"
-              name="id_categoria"
-              value={selectedInsumo.id_categoria}
-              onChange={(e) => setSelectedInsumo({ ...selectedInsumo, id_categoria: e })}
-              required              
-              className="rounded-lg border-gray-300"
-            >
-              {categorias.filter(categoria => categoria.estado).map((categoria) => (
-                <Option key={categoria.id_categoria} value={categoria.id_categoria}>
-                  {categoria.nombre}
-                </Option>
-              ))}
-            </Select>
-            {errors.id_categoria && <Typography className="text-red-500 mt-1 text-sm">{errors.id_categoria}</Typography>}
-          </div>
-          <div>
-            <Select
-              label="Unidad de Medida"
-              name="unidad_medida"
-              value={selectedInsumo.unidad_medida}
-              onChange={(e) => setSelectedInsumo({ ...selectedInsumo, unidad_medida: e })}
-              required              
-              className="rounded-lg border-gray-300"
-            >
-              <Option value="Gramos">Gramos</Option>
-              <Option value="Mililitros">Mililitros</Option>
-              <Option value="Unidad">Unidad</Option>
-            </Select>
-            {errors.unidad_medida && <Typography className="text-red-500 mt-1 text-sm">{errors.unidad_medida}</Typography>}
-          </div>
+  <Select
+    label="Categoría de Insumo"
+    name="id_categoria"
+    value={selectedInsumo.id_categoria || ""}
+    onChange={(e) => {
+      setSelectedInsumo({ ...selectedInsumo, id_categoria: e });
+      // Validación en tiempo real
+      if (!e) {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          id_categoria: "Por favor, seleccione una categoría.",
+        }));
+      } else {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          id_categoria: "", // Limpiar el error cuando se selecciona algo
+        }));
+      }
+    }}
+    required
+    className="rounded-lg border-gray-300"
+  >
+    {categorias.filter((categoria) => categoria.estado).map((categoria) => (
+      <Option key={categoria.id_categoria} value={categoria.id_categoria}>
+        {categoria.nombre}
+      </Option>
+    ))}
+  </Select>
+  {errors.id_categoria && (
+    <Typography className="text-red-500 mt-1 text-sm">
+      {errors.id_categoria}
+    </Typography>
+  )}
+</div>
+
+<div>
+  <Select
+    label="Unidad de Medida"
+    name="unidad_medida"
+    value={selectedInsumo.unidad_medida || ""}
+    onChange={(e) => {
+      setSelectedInsumo({ ...selectedInsumo, unidad_medida: e });
+      // Validación en tiempo real
+      if (!e) {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          unidad_medida: "Por favor, seleccione una unidad de medida.",
+        }));
+      } else {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          unidad_medida: "", // Limpiar el error cuando se selecciona algo
+        }));
+      }
+    }}
+    required
+    className="rounded-lg border-gray-300"
+  >
+    <Option value="Gramos">Gramos</Option>
+    <Option value="Mililitros">Mililitros</Option>
+    <Option value="Unidad">Unidad</Option>
+  </Select>
+  {errors.unidad_medida && (
+    <Typography className="text-red-500 mt-1 text-sm">
+      {errors.unidad_medida}
+    </Typography>
+  )}
+</div>
+
         </DialogBody>
         <DialogFooter className="flex justify-end pt-4">
           <Button variant="text" className="btncancelarm" size="sm" onClick={handleOpen}>
