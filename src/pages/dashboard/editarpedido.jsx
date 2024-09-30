@@ -255,6 +255,8 @@ export function EditarPedido({ pedido, clientes = [], productos = [], fetchPedid
     }
   
     const pedidoToSave = {
+      id_cliente: selectedPedido.id_cliente,
+      numero_pedido: selectedPedido.numero_pedido,
       fecha_entrega: new Date(selectedPedido.fecha_entrega).toISOString(),
       fecha_pago: selectedPedido.fecha_pago ? new Date(selectedPedido.fecha_pago).toISOString() : null,
       id_estado: selectedPedido.id_estado, // Guardar el nuevo estado seleccionado

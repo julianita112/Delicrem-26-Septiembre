@@ -216,26 +216,22 @@ export function Insumos() {
     }
   };
   
-
   const validateForm = () => {
     const regex = /^[a-zA-ZáéíóúüÁÉÍÓÚÜ0-9\s]+$/; // Permitir letras y números
     const errors = {};
     
-    // Validación del nombre del insumo
     if (!selectedInsumo.nombre.trim()) {
-      errors.nombre = "Por favor, ingrese el nombre del insumo";
-    } else if (!regex.test(selectedInsumo.nombre)) {
-      errors.nombre = "El nombre del insumo solo puede contener letras, números y espacios";
-    } else if (selectedInsumo.nombre.length < 3 || selectedInsumo.nombre.length > 20) {
-      errors.nombre = "El nombre del insumo debe tener entre 3 y 20 caracteres";
-    }
+      errors.nombre = "Por favor, ingrese el nombre del insumo.";
+  } else if (!/^[a-zA-Z\s]+$/.test(selectedInsumo.nombre)) {
+      errors.nombre = "El nombre del insumo solo puede contener letras y espacios.";
+  } else if (selectedInsumo.nombre.length < 3 || selectedInsumo.nombre.length > 20) {
+      errors.nombre = "El nombre del insumo debe tener entre 3 y 20 caracteres.";
+  }
     
-    // Validación de la categoría
     if (!selectedInsumo.id_categoria) {
       errors.id_categoria = "Por favor, ingrese la categoría del insumo";
     }
   
-    // Validación de la unidad de medida
     if (!selectedInsumo.unidad_medida) {
       errors.unidad_medida = "Por favor, seleccione la unidad de medida";
     }
@@ -243,15 +239,12 @@ export function Insumos() {
     return errors;
   };
   
-  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setSelectedInsumo({ ...selectedInsumo, [name]: value });
     const validationErrors = validateForm(); // Llama a validateForm para verificar errores
     setErrors(validationErrors); // Actualiza los errores en el estado
   };
-  
-
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
@@ -265,7 +258,6 @@ export function Insumos() {
   const handleToggleEstado = async (insumo) => {
     const estado = !insumo.estado;
     const accion = estado ? 'activar' : 'desactivar';
-  
     const result = await Swal.fire({
       title: `¿Estás seguro?`,
       text: `¿Deseas ${accion} el insumo?`,
@@ -279,11 +271,9 @@ export function Insumos() {
   
     if (result.isConfirmed) {
       try {
-        if (!estado) { // Solo verificamos si intentamos desactivar el insumo
-          // Verificar si el insumo está asociado a una ficha técnica
+        if (!estado) { // Solo verificamos si intentamos desactivar el insumo   
           const fichasResponse = await axios.get(`http://localhost:3000/api/fichastecnicas`);
           const fichasTecnicas = fichasResponse.data.filter(ficha => ficha.insumos.includes(insumo.id_insumo));
-  
           if (fichasTecnicas.length > 0) {
             Swal.fire({
               icon: 'warning',
@@ -339,10 +329,6 @@ export function Insumos() {
       }
     }
   };
-  
-  
-  
-  
 
   const indexOfLastInsumo = currentPage * insumosPerPage;
   const indexOfFirstInsumo = indexOfLastInsumo - insumosPerPage;
@@ -354,14 +340,11 @@ export function Insumos() {
   }
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
   return (
     <>
       <div className="relative h-20 w-full overflow-hidden rounded-xl bg-cover bg-center">
       <div className="absolute inset-0 h-full w-full bg-white-900/75" />
       </div>
-
-
       <Card className="mx-3 -mt-16 mb-6 lg:mx-4 border border-blue-gray-100">
   <CardBody className="p-4">
   <div className="flex items-center justify-between mb-6">
@@ -382,8 +365,6 @@ export function Insumos() {
   style={{ width: '250px' }} // Ajusta el ancho del campo de búsqueda
 />
 </div>
-
-
           <div className="mb-1">
             <Typography variant="h5" color="blue-gray" className="mb-4">
               Lista de Insumos
@@ -475,8 +456,7 @@ export function Insumos() {
                           <IconButton
                             className="btnvisualizar"
                             size="sm"
-                            onClick={() => handleViewDetails(insumo)}
-                            
+                            onClick={() => handleViewDetails(insumo)}                          
                           >
                             <EyeIcon className="h-4 w-4" />
                           </IconButton>
@@ -516,8 +496,7 @@ export function Insumos() {
               name="nombre"
               value={selectedInsumo.nombre}
               onChange={handleChange}
-              required
-            
+              required          
               className="rounded-lg border-gray-300"
             />
             {errors.nombre && <Typography className="text-red-500 mt-1 text-sm">{errors.nombre}</Typography>}
@@ -528,8 +507,7 @@ export function Insumos() {
               name="id_categoria"
               value={selectedInsumo.id_categoria}
               onChange={(e) => setSelectedInsumo({ ...selectedInsumo, id_categoria: e })}
-              required
-              
+              required              
               className="rounded-lg border-gray-300"
             >
               {categorias.filter(categoria => categoria.estado).map((categoria) => (
@@ -546,8 +524,7 @@ export function Insumos() {
               name="unidad_medida"
               value={selectedInsumo.unidad_medida}
               onChange={(e) => setSelectedInsumo({ ...selectedInsumo, unidad_medida: e })}
-              required
-              
+              required              
               className="rounded-lg border-gray-300"
             >
               <Option value="Gramos">Gramos</Option>

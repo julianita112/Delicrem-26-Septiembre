@@ -111,23 +111,49 @@ const CrearUsuario = ({
   
     if (!user.numero_documento) {
       errors.numero_documento = "Debe ingresar un número de documento.";
-    } 
+  } else if (!/^\d+$/.test(user.numero_documento)) {
+      errors.numero_documento = "El número de documento solo debe contener números.";
+  } else if (user.numero_documento.length < 8) {
+      errors.numero_documento = "El número de documento debe tener al menos 8 dígitos.";
+  } else if (user.numero_documento.length > 10) {
+      errors.numero_documento = "El número de documento no puede exceder 10 dígitos.";
+  }
+  
   
     if (!user.genero) {
       errors.genero = "Debe seleccionar un género.";
     }
   
-    if (!user.nacionalidad) {
-      errors.nacionalidad = "Debe ingresar una nacionalidad.";
-    }
-  
-    if (!user.telefono) {
-      errors.telefono = "Debe ingresar un número de teléfono.";
-    } 
-  
-    if (!user.direccion) {
-      errors.direccion = "Debe ingresar una dirección.";
-    }
+    // Validación para nacionalidad
+if (!user.nacionalidad) {
+  errors.nacionalidad = "Debe ingresar una nacionalidad.";
+} else if (user.nacionalidad.length < 4) {
+  errors.nacionalidad = "La nacionalidad debe tener al menos 4 letras.";
+} else if (user.nacionalidad.length > 15) {
+  errors.nacionalidad = "La nacionalidad no puede exceder 15 letras.";
+} else if (!/^[a-zA-Z]+$/.test(user.nacionalidad)) {
+  errors.nacionalidad = "La nacionalidad solo debe contener letras.";
+}
+
+// Validación para teléfono
+if (!user.telefono) {
+  errors.telefono = "Debe ingresar un número de teléfono.";
+} else if (!/^\d+$/.test(user.telefono)) {
+  errors.telefono = "El número de teléfono solo debe contener números.";
+} else if (user.telefono.length < 6) {
+  errors.telefono = "El número de teléfono debe tener al menos 6 dígitos.";
+} else if (user.telefono.length > 10) {
+  errors.telefono = "El número de teléfono no puede exceder 10 dígitos.";
+}
+
+if (!user.direccion) {
+  errors.direccion = "Debe ingresar una dirección.";
+} else if (user.direccion.length < 5) {
+  errors.direccion = "La dirección debe tener al menos 5 caracteres.";
+} else if (user.direccion.length > 25) {
+  errors.direccion = "La dirección no puede exceder 25 caracteres.";
+}
+
   
     if (!user.id_rol) {
       errors.id_rol = 'Debe seleccionar un rol.';
